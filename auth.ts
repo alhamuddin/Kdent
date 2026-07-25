@@ -1,4 +1,4 @@
-import { betterAuth, uuid } from "better-auth";
+import { betterAuth } from "better-auth";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./app/generated/prisma/client";
 import { prismaAdapter } from "better-auth/adapters/prisma";
