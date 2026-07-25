@@ -1,8 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Button from "./components/Button";
+import Buttons from "./components/Button";
 import { Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { auth } from "@/auth";
+import { signOut } from "./actions/auth-actions";
 
 const navlinks = [
   { name: "About", href: "#about" },
@@ -12,9 +26,13 @@ const navlinks = [
   { name: "Contact", href: "#contact" },
 ];
 
-function Navbar() {
+type Session = typeof auth.$Infer.Session;
+
+function Navbar({ session }: { session: Session | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +43,11 @@ function Navbar() {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+  };
   return (
     <header
       className={`fixed top-0 right-0 left-0 transition-all duration-500 ${isScrolled ? "glass-strong py-3" : "bg-transparent py-5"} z-50`}
@@ -52,8 +75,46 @@ function Navbar() {
           </div>
         </div>
         {/* CTA button */}
-        <div className="hidden md:block">
-          <Button size="sm">Contact Me</Button>
+        <div className="flex items-center gap-3">
+          {!session && (
+            <div className="hidden md:block">
+              <Buttons size="sm" onClick={() => router.push("/login")}>
+                Login
+              </Buttons>
+            </div>
+          )}
+          {session && (
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button className="bg-none" variant="link" />}
+                >
+                  <Image
+                    src={session.user.image || `/user.jpg`}
+                    alt="user"
+                    width={45}
+                    height={45}
+                    className="borde rounded-full border-2 border-amber-500 object-cover"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="">
+                  <DropdownMenuGroup className="my-5">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem>Billing</DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>Team</DropdownMenuItem>
+                    <DropdownMenuItem>Subscription</DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <button onClick={handleSignOut}>Sign Out</button>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -80,9 +141,27 @@ function Navbar() {
               </a>
             ))}
 
-            <Button onClick={() => setIsMobileMenuOpen(false)} size="sm">
-              Contact Me
-            </Button>
+            {session ? (
+              <Button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  void handleSignOut();
+                }}
+                size="sm"
+              >
+                Log Out!
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  router.push("/login");
+                }}
+                size="sm"
+              >
+                Log In!
+              </Button>
+            )}
           </div>
         </div>
       )}

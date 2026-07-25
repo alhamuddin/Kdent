@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
+import { auth } from "@/auth";
+import { headers } from "next/headers";
+import serverSession from "./utils/serverSession";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,18 +21,19 @@ export const metadata: Metadata = {
   description: "Excellent Dental Care",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await serverSession();
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <Navbar />
+        <Navbar session={session} />
         {children}
       </body>
     </html>

@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { contactSchema } from "../utils/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Button from "../components/Button";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 import {
   Mail,
@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { sendMail } from "../actions/sendMail";
+import { useState } from "react";
 
 const contactInfo = [
   {
@@ -40,6 +41,8 @@ const contactInfo = [
 ];
 
 function ContactForm() {
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [serverError, setServerError] = useState("");
   const {
     register,
     reset,
@@ -54,10 +57,22 @@ function ContactForm() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof contactSchema>) => {
-    sendMail(data);
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof contactSchema>) => {
+    if (!turnstileToken) {
+      setServerError("Please complete the verification.");
+      return;
+    }
+
+    setServerError("");
+    const result = await sendMail(data, turnstileToken);
+
+    if (result.error) {
+      setServerError(result.error);
+      return;
+    }
+
     reset();
+    setTurnstileToken(null);
   };
 
   return (
@@ -104,7 +119,10 @@ function ContactForm() {
               )}
             </div>
             <div>
-              <label htmlFor="name" className="mb-2 block text-sm font-medium">
+              <label
+                htmlFor="message"
+                className="mb-2 block text-sm font-medium"
+              >
                 Your message...
               </label>
               <textarea
@@ -121,7 +139,16 @@ function ContactForm() {
                   {errors.message.message}
                 </p>
               )}
+              <p>{serverError}</p>
             </div>
+            <Turnstile
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() =>
+                setServerError("Bot verification could not be completed.")
+              }
+            />
             <Button
               className="w-full"
               type="submit"
@@ -135,6 +162,8 @@ function ContactForm() {
                   Message Sent Successfully
                   <CheckCircle className="h-5 w-5 text-green-500" />
                 </>
+              ) : serverError ? (
+                <p>{serverError || errors.message?.message}</p>
               ) : (
                 <>
                   Send Message

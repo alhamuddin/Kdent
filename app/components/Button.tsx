@@ -1,6 +1,6 @@
 import React from "react";
 
-function Button({
+function Buttons({
   className,
   size,
   children,
@@ -29,7 +29,7 @@ function Button({
   return (
     <button
       {...props}
-      // disabled={disabled || false}
+      disabled={disabled}
       type={type}
       onClick={onClick}
       className={classes}
@@ -41,4 +41,4 @@ function Button({
   );
 }
 
-export default Button;
+export default Buttons;
