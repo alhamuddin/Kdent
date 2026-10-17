@@ -15,8 +15,10 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import { sendMail } from "../actions/sendMail";
-import { useState } from "react";
+import { sendContactMessage } from "../actions/contact-form";
+import { useRef, useState } from "react";
+import type { FormEvent } from "react";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 
 const contactInfo = [
   {
@@ -43,10 +45,12 @@ const contactInfo = [
 function ContactForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [serverError, setServerError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const {
     register,
     reset,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
     handleSubmit,
   } = useForm<z.infer<typeof contactSchema>>({
     resolver: zodResolver(contactSchema),
@@ -64,22 +68,41 @@ function ContactForm() {
     }
 
     setServerError("");
-    const result = await sendMail(data, turnstileToken);
+    setSuccessMessage("");
 
-    if (result.error) {
-      setServerError(result.error);
-      return;
+    try {
+      const result = await sendContactMessage(data, turnstileToken);
+
+      if (result.error) {
+        setServerError(result.error);
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
+        return;
+      }
+
+      setSuccessMessage(result.success ?? "Your message has been sent.");
+      reset();
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
+    } catch {
+      setServerError("Your message could not be sent. Please try again.");
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     }
+  };
 
-    reset();
-    setTurnstileToken(null);
+  const submitForm = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setServerError("");
+    setSuccessMessage("");
+    void handleSubmit(onSubmit)(event);
   };
 
   return (
     <div>
-      <div className="relative container mx-auto grid max-w-5xl gap-12 px-10 lg:grid-cols-2">
+      <div className="relative container mx-auto grid max-w-5xl gap-6 px-0 sm:gap-12 sm:px-6 lg:grid-cols-2">
         <div className="glass border-primary/30 animate-fade-in animation-delay-300 rounded-3xl border p-8">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-6" noValidate onSubmit={submitForm}>
             <div>
               <label htmlFor="name" className="mb-2 block text-sm font-medium">
                 Name
@@ -139,16 +162,26 @@ function ContactForm() {
                   {errors.message.message}
                 </p>
               )}
-              <p>{serverError}</p>
             </div>
             <Turnstile
+              ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
               onSuccess={setTurnstileToken}
               onExpire={() => setTurnstileToken(null)}
-              onError={() =>
-                setServerError("Bot verification could not be completed.")
-              }
+              onError={() => setServerError("Bot verification could not be completed. Please refresh the challenge.")}
             />
+            {serverError && (
+              <p className="flex items-center gap-2 text-sm text-rose-300" role="alert">
+                <AlertCircle className="size-4 shrink-0" />
+                {serverError}
+              </p>
+            )}
+            {successMessage && (
+              <p className="flex items-center gap-2 text-sm text-emerald-300" role="status">
+                <CheckCircle className="size-4 shrink-0" />
+                {successMessage}
+              </p>
+            )}
             <Button
               className="w-full"
               type="submit"
@@ -157,13 +190,11 @@ function ContactForm() {
             >
               {isSubmitting ? (
                 <>Sending...</>
-              ) : isSubmitSuccessful ? (
+              ) : successMessage ? (
                 <>
                   Message Sent Successfully
                   <CheckCircle className="h-5 w-5 text-green-500" />
                 </>
-              ) : serverError ? (
-                <p>{serverError || errors.message?.message}</p>
               ) : (
                 <>
                   Send Message

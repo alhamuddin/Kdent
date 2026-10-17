@@ -1,160 +1,139 @@
 "use client";
-import { useForm } from "react-hook-form";
-import { loginSchema } from "../utils/schemas";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import Buttons from "../components/Button";
-import { signIn } from "../actions/auth-actions";
-import {
-  CheckCircle,
-  CircleCheckBig,
-  LogIn,
-  TriangleAlert,
-} from "lucide-react";
+import { ArrowRight, LoaderCircle, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-//import { useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import AuthShell from "../components/AuthShell";
 import Social from "../components/Social";
+import { signIn } from "../actions/auth-actions";
+import { loginSchema } from "../utils/schemas";
 
-function LoginForm() {
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+export default function LoginForm() {
+  const [serverError, setServerError] = useState("");
   const router = useRouter();
-
   const {
     register,
-    reset,
     formState: { errors, isSubmitting },
     handleSubmit,
   } = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
+
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
-    setError("");
-    setSuccess("");
+    setServerError("");
     try {
       const result = await signIn(data.email, data.password);
       if (result?.error) {
-        setError(result.error);
+        setServerError(result.error);
+        return;
       }
-      if (result?.success) {
-        setSuccess(result.success);
-        router.push("/dashboard"); // 1. Navigate to the new page first.
-        router.refresh();
-      }
+      router.push("/dashboard");
+      router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      reset();
+      setServerError("We couldn’t sign you in. Please try again.");
     }
   };
-  return (
-    <div>
-      <div className="relative container mx-auto mt-20 max-w-2xl gap-12 px-10">
-        <h1 className="text-primary my-3 flex items-center justify-center text-3xl font-semibold">
-          Welcome Back{" "}
-        </h1>
-        <h2 className="text-primary mb-3 flex items-center justify-center text-xl">
-          Sign in to your account to continue
-        </h2>
-        <div className="glass border-primary/30 animate-fade-in animation-delay-300 rounded-3xl border p-8">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium">
-                Your Email
-              </label>
-              <input
-                {...register("email")}
-                id="email"
-                disabled={isSubmitting}
-                type="email"
-                required
-                placeholder="Your email"
-                className="bg-surface border-border focus:border-primary focus:ring-primary w-full rounded-xl border px-4 py-3 transition-all outline-none focus:ring-1"
-              />
-              {errors.email && (
-                <p className="pt-3 text-sm text-red-400">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-medium"
-              >
-                Your password
-              </label>
-              <input
-                {...register("password")}
-                id="password"
-                disabled={isSubmitting}
-                required
-                type="password"
 
-                placeholder="Input your password"
-                className="bg-surface border-border focus:border-primary focus:ring-primary w-full resize-none rounded-xl border px-4 py-3 transition-all outline-none focus:ring-1"
-              />
-              {errors.password && (
-                <p className="pt-3 text-sm text-red-400">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-            <Buttons
-              className="w-full"
-              type="submit"
-              size="default"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>Logging in...</>
-              ) : !errors ? (
-                <>
-                  Logged in.
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </>
-              ) : (
-                <>
-                  Login
-                  <LogIn className="h-5 w-5" />
-                </>
-              )}
-            </Buttons>
-          </form>
-          <div className="mt-3">
-            {error && (
-              <p className="flex items-center gap-3 text-red-500">
-                <TriangleAlert /> {error}
-              </p>
-            )}
-            {success && (
-              <p className="flex items-center gap-3 text-green-500">
-                {" "}
-                <CircleCheckBig />
-                {success}
-              </p>
-            )}
-          </div>
-          <div className="mt-3">
-            <Link
-              className="text-primary/80 text-sm hover:text-white/50"
-              href="/register"
-            >
-              Don&apos;t have an account? click here!{" "}
-            </Link>
-          </div>
+  return (
+    <AuthShell
+      description="Use your K-Dent account to continue to your workspace."
+      eyebrow="Welcome back"
+      title="Sign in to K-Dent"
+    >
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium text-white/85"
+            htmlFor="email"
+          >
+            Email address
+          </label>
+          <input
+            autoComplete="email"
+            className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-white/30 focus:border-primary/70 focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
+            disabled={isSubmitting}
+            id="email"
+            placeholder="name@clinic.com"
+            type="email"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="mt-2 text-xs text-rose-300">{errors.email.message}</p>
+          )}
         </div>
-        {/* Social Authentication */}
-        <Social />
+
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium text-white/85"
+            htmlFor="password"
+          >
+            Password
+          </label>
+          <input
+            autoComplete="current-password"
+            className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-white/30 focus:border-primary/70 focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
+            disabled={isSubmitting}
+            id="password"
+            placeholder="Enter your password"
+            type="password"
+            {...register("password")}
+          />
+          {errors.password && (
+            <p className="mt-2 text-xs text-rose-300">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        {serverError && (
+          <p
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-lg border border-rose-400/20 bg-rose-400/5 p-3 text-sm text-rose-200"
+            role="alert"
+          >
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            {serverError}
+          </p>
+        )}
+
+        <button
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+          disabled={isSubmitting}
+          type="submit"
+        >
+          {isSubmitting ? (
+            <>
+              <LoaderCircle className="size-4 animate-spin" /> Signing in
+            </>
+          ) : (
+            <>
+              Sign in <ArrowRight className="size-4" />
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3 text-[11px] font-medium tracking-[0.14em] text-white/35 uppercase">
+        <span className="h-px flex-1 bg-white/10" />
+        or continue with
+        <span className="h-px flex-1 bg-white/10" />
       </div>
-    </div>
+      <Social />
+
+      <p className="mt-7 text-center text-sm text-white/55">
+        New to K-Dent?{" "}
+        <Link
+          className="font-semibold text-primary transition hover:text-white"
+          href="/register"
+        >
+          Create an account
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
-
-export default LoginForm;

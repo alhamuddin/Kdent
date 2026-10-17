@@ -1,5 +1,6 @@
-import { auth } from "@/auth";
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import { signInSocial } from "../actions/auth-actions";
 
 function Social() {
@@ -12,18 +13,23 @@ function Social() {
 
     try {
       await signInSocial(provider);
-    } catch (error) {
-      setError("something went wrong" + error);
+    } catch {
+      setError("We couldn’t connect your account. Please try again.");
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="animate-fade-in animation-delay-300 my-5 space-y-3 rounded-3xl">
-      <div>{error}</div>
+      {error && (
+        <p className="rounded-lg border border-rose-400/20 bg-rose-400/5 p-3 text-sm text-rose-200">
+          {error}
+        </p>
+      )}
       <button
         onClick={() => handleSocialAuth("google")}
         disabled={isLoading}
-        className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-100 focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
       >
         <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
           <path
@@ -43,13 +49,13 @@ function Social() {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-        Continue with Google
+        {isLoading ? "Connecting…" : "Continue with Google"}
       </button>
 
       <button
         onClick={() => handleSocialAuth("github")}
         disabled={isLoading}
-        className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-900 px-4 py-3 text-white shadow-sm transition-colors hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center rounded-xl border border-white/15 bg-background px-4 py-3 text-sm font-medium text-white transition hover:bg-white/5 focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
       >
         <svg className="mr-3 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
           <path
@@ -58,7 +64,7 @@ function Social() {
             clipRule="evenodd"
           />
         </svg>
-        Continue with GitHub
+        {isLoading ? "Connecting…" : "Continue with GitHub"}
       </button>
     </div>
   );

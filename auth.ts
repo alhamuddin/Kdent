@@ -3,6 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./app/generated/prisma/client";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import {
+  sendAccountDeletionConfirmation,
+  sendEmailChangeConfirmation,
+  sendNewEmailVerification,
+} from "./app/actions/sendMail";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -23,6 +28,25 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendNewEmailVerification(user.email, url);
+    },
+  },
+  user: {
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        await sendEmailChangeConfirmation(user.email, newEmail, url);
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      sendDeleteAccountVerification: async ({ user, url }) => {
+        await sendAccountDeletionConfirmation(user.email, url);
+      },
+    },
   },
   // advanced: {
   //   database: {

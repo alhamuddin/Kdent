@@ -1,59 +1,68 @@
-"use server";
+import "server-only";
 
-import * as z from "zod";
-import { contactSchema } from "../utils/schemas";
+import type * as z from "zod";
+import type { contactSchema } from "../utils/schemas";
 import { transporter } from "../libs/nodemailer";
 
-export const sendMail = async (
-  data: z.infer<typeof contactSchema>,
-  turnstileToken: string,
-) => {
-  const validation = contactSchema.safeParse(data);
-  if (!validation.success) {
-    return { error: "Invalid form data." };
-  }
+type ContactMessage = z.infer<typeof contactSchema>;
 
-  const response = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    {
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        secret: process.env.TURNSTILE_SECRET_KEY!,
-        response: turnstileToken,
-      }),
-    },
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character] ?? character;
+  });
+
+const sendKdentMail = (to: string, subject: string, html: string) =>
+  transporter.sendMail({
+    from: `"K-Dent" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+  });
+
+export async function sendContactEmail({ name, email, message }: ContactMessage) {
+  await transporter.sendMail({
+    from: `"K-Dent Website" <${process.env.SMTP_USER}>`,
+    to: process.env.CONTACT_EMAIL,
+    replyTo: email,
+    subject: "New message from the K-Dent website",
+    html: `<h2>New message from K-Dent</h2><p><strong>Name:</strong> ${escapeHtml(name)}</p><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Message:</strong></p><p>${escapeHtml(message).replace(/\n/g, "<br>")}</p>`,
+  });
+}
+
+export async function sendNewEmailVerification(email: string, url: string) {
+  await sendKdentMail(
+    email,
+    "Verify your new K-Dent email address",
+    `<p>Confirm your new email address for K-Dent.</p><p><a href="${escapeHtml(url)}">Verify email address</a></p>`,
   );
+}
 
-  const verification = (await response.json()) as { success: boolean };
+export async function sendEmailChangeConfirmation(
+  currentEmail: string,
+  newEmail: string,
+  url: string,
+) {
+  await sendKdentMail(
+    currentEmail,
+    "Confirm your K-Dent email change",
+    `<p>A request was made to change your K-Dent email to ${escapeHtml(newEmail)}.</p><p>Confirm this request from your current email address:</p><p><a href="${escapeHtml(url)}">Confirm email change</a></p>`,
+  );
+}
 
-  if (!verification.success) {
-    return { error: "Bot verification failed. Please try again." };
-  }
-
-  const { email, name, message } = validation.data;
-
-  try {
-    await transporter.sendMail({
-      from: `"Website Contact" <${process.env.SMTP_USER}>`,
-      to: process.env.CONTACT_EMAIL,
-
-      subject: `New message from ${name}`,
-
-      html: `
-        <h2>New Message from KDENT </h2>
-
-        <p><strong>Name:</strong> ${name}</p>
-
-        <p><strong>Email:</strong> ${email}</p>
-
-        <p><strong>Message:</strong>${message}</p>
-
-        
-      `,
-    });
-    return { success: "email sent" };
-  } catch (error) {
-    return { error: "email not sent" };
-  }
-};
+export async function sendAccountDeletionConfirmation(
+  email: string,
+  url: string,
+) {
+  await sendKdentMail(
+    email,
+    "Confirm your K-Dent account deletion",
+    `<p>A request was made to permanently delete your K-Dent account.</p><p>This will remove your account and sign-in sessions. If you did not make this request, ignore this email.</p><p><a href="${escapeHtml(url)}">Confirm account deletion</a></p>`,
+  );
+}

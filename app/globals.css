@@ -37,11 +37,18 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Inter", sans-serif;
+    font-family: var(--font-geist-sans), sans-serif;
   }
 
   .font-serif {
     font-family: "Playfair Display", serif;
+  }
+
+  :root {
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(73.486% 0.14247 80.645);
+    --chart-4: oklch(59.401% 0.26744 323.424);
   }
 }
 
@@ -67,6 +74,49 @@
     box-shadow:
       0 0 20px color-mix(in srgb, var(--color-primary) 20%, transparent),
       inset 0 0 20px color-mix(in srgb, var(--color-primary) 5%, transparent);
+  }
+}
+
+@keyframes heartbeat {
+  0%,
+  35%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.18);
+  }
+  22% {
+    transform: scale(1.04);
+  }
+  30% {
+    transform: scale(1.14);
+  }
+}
+
+.animate-heartbeat {
+  transform-origin: center;
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+@keyframes heartbeat-wave {
+  from {
+    stroke-dashoffset: 46;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.heartbeat-wave {
+  stroke-dasharray: 8 38;
+  animation: heartbeat-wave 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-heartbeat,
+  .heartbeat-wave {
+    animation: none;
   }
 }
 

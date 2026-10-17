@@ -1,201 +1,188 @@
 "use client";
-import { useForm } from "react-hook-form";
-import { registerSchema } from "../utils/schemas";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import Buttons from "../components/Button";
-import { signUp } from "../actions/auth-actions";
-import {
-  CheckCircle,
-  CircleCheckBig,
-  LogIn,
-  TriangleAlert,
-} from "lucide-react";
+import { ArrowRight, LoaderCircle, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import AuthShell from "../components/AuthShell";
 import Social from "../components/Social";
+import { signUp } from "../actions/auth-actions";
+import { registerSchema } from "../utils/schemas";
 
-function RegisterForm() {
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+export default function RegisterForm() {
+  const [serverError, setServerError] = useState("");
   const router = useRouter();
-
   const {
     register,
-    reset,
     formState: { errors, isSubmitting },
     handleSubmit,
   } = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
+
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
-    setError("");
-    setSuccess("");
-    const { email, name, password } = data;
+    setServerError("");
     try {
-      const result = await signUp(email, password, name);
+      const result = await signUp(data.email, data.password, data.name);
       if (result?.error) {
-        setError(result.error);
+        setServerError(result.error);
+        return;
       }
-      if (result?.success) {
-        setSuccess(result.success);
-        router.push("/dashboard");
-        router.refresh();
-      }
+      router.push("/dashboard");
+      router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      reset();
+      setServerError("Your account could not be created. Please try again.");
     }
   };
+
   return (
-    <div>
-      <div className="relative container mx-auto mt-20 max-w-2xl gap-12 px-10">
-        <h1 className="text-primary my-3 flex items-center justify-center text-3xl font-semibold">
-          Don&apos;t have an account?{" "}
-        </h1>
-        <h2 className="text-primary mb-3 flex items-center justify-center text-xl">
-          Sign up to continue
-        </h2>
-        <div className="glass border-primary/30 animate-fade-in animation-delay-300 rounded-3xl border p-8">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label htmlFor="name" className="mb-2 block text-sm font-medium">
-                Your name
-              </label>
-              <input
-                {...register("name")}
-                id="name"
-                disabled={isSubmitting}
-                type="name"
-                required
-                placeholder="Your name"
-                className="bg-surface border-border focus:border-primary focus:ring-primary w-full rounded-xl border px-4 py-3 transition-all outline-none focus:ring-1"
-              />
-              {errors.name && (
-                <p className="pt-3 text-sm text-red-400">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium">
-                Your Email
-              </label>
-              <input
-                {...register("email")}
-                id="email"
-                disabled={isSubmitting}
-                type="email"
-                required
-                placeholder="Your email"
-                className="bg-surface border-border focus:border-primary focus:ring-primary w-full rounded-xl border px-4 py-3 transition-all outline-none focus:ring-1"
-              />
-              {errors.email && (
-                <p className="pt-3 text-sm text-red-400">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-medium"
-              >
-                Password
-              </label>
-              <input
-                {...register("password")}
-                id="password"
-                disabled={isSubmitting}
-                required
-                type="password"
-
-                placeholder="Input your password"
-                className="bg-surface border-border focus:border-primary focus:ring-primary w-full resize-none rounded-xl border px-4 py-3 transition-all outline-none focus:ring-1"
-              />
-              {errors.password && (
-                <p className="pt-3 text-sm text-red-400">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-2 block text-sm font-medium"
-              >
-                Confirm Password
-              </label>
-              <input
-                {...register("confirmPassword")}
-                id="confirmPassword"
-                disabled={isSubmitting}
-                required
-                type="password"
-
-                placeholder="Confirm your password"
-                className="bg-surface border-border focus:border-primary focus:ring-primary w-full resize-none rounded-xl border px-4 py-3 transition-all outline-none focus:ring-1"
-              />
-              {errors.confirmPassword && (
-                <p className="pt-3 text-sm text-red-400">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-            <Buttons
-              className="w-full"
-              type="submit"
-              size="default"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>Signing up...</>
-              ) : !errors ? (
-                <>
-                  Signed up.
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </>
-              ) : (
-                <>
-                  Sign Up
-                  <LogIn className="h-5 w-5" />
-                </>
-              )}
-            </Buttons>
-          </form>
-          <div className="mt-3">
-            {error && (
-              <p className="flex items-center gap-3 text-red-500">
-                <TriangleAlert /> {error}
-              </p>
-            )}
-            {success && (
-              <p className="flex items-center gap-3 text-green-500">
-                {" "}
-                <CircleCheckBig />
-                {success}
-              </p>
-            )}
-          </div>
-          <div className="mt-3">
-            <Link
-              className="text-primary/80 text-sm hover:text-white/50"
-              href="/login"
-            >
-              Already have an account? click here!{" "}
-            </Link>
-          </div>
+    <AuthShell
+      description="Create your secure workspace account and get started with K-Dent."
+      eyebrow="Get started"
+      title="Create your account"
+    >
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium text-white/85"
+            htmlFor="name"
+          >
+            Full name
+          </label>
+          <input
+            autoComplete="name"
+            className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-white/30 focus:border-primary/70 focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
+            disabled={isSubmitting}
+            id="name"
+            placeholder="Your name"
+            type="text"
+            {...register("name")}
+          />
+          {errors.name && (
+            <p className="mt-2 text-xs text-rose-300">{errors.name.message}</p>
+          )}
         </div>
-        <Social />
+
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium text-white/85"
+            htmlFor="email"
+          >
+            Email address
+          </label>
+          <input
+            autoComplete="email"
+            className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-white/30 focus:border-primary/70 focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
+            disabled={isSubmitting}
+            id="email"
+            placeholder="name@clinic.com"
+            type="email"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="mt-2 text-xs text-rose-300">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium text-white/85"
+            htmlFor="password"
+          >
+            Password
+          </label>
+          <input
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-white/30 focus:border-primary/70 focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
+            disabled={isSubmitting}
+            id="password"
+            placeholder="Create a password"
+            type="password"
+            {...register("password")}
+          />
+          {errors.password && (
+            <p className="mt-2 text-xs text-rose-300">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            className="mb-2 block text-sm font-medium text-white/85"
+            htmlFor="confirmPassword"
+          >
+            Confirm password
+          </label>
+          <input
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-white/10 bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-white/30 focus:border-primary/70 focus:ring-4 focus:ring-primary/10 disabled:opacity-50"
+            disabled={isSubmitting}
+            id="confirmPassword"
+            placeholder="Enter your password again"
+            type="password"
+            {...register("confirmPassword")}
+          />
+          {errors.confirmPassword && (
+            <p className="mt-2 text-xs text-rose-300">
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
+
+        <p className="text-xs leading-5 text-white/45">
+          Use at least 8 characters, including uppercase and lowercase letters,
+          a number, and a special character.
+        </p>
+
+        {serverError && (
+          <p
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-lg border border-rose-400/20 bg-rose-400/5 p-3 text-sm text-rose-200"
+            role="alert"
+          >
+            <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+            {serverError}
+          </p>
+        )}
+
+        <button
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+          disabled={isSubmitting}
+          type="submit"
+        >
+          {isSubmitting ? (
+            <>
+              <LoaderCircle className="size-4 animate-spin" /> Creating account
+            </>
+          ) : (
+            <>
+              Create account <ArrowRight className="size-4" />
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3 text-[11px] font-medium tracking-[0.14em] text-white/35 uppercase">
+        <span className="h-px flex-1 bg-white/10" />
+        or sign up with
+        <span className="h-px flex-1 bg-white/10" />
       </div>
-    </div>
+      <Social />
+
+      <p className="mt-7 text-center text-sm text-white/55">
+        Already have an account?{" "}
+        <Link
+          className="font-semibold text-primary transition hover:text-white"
+          href="/login"
+        >
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
-
-export default RegisterForm;
