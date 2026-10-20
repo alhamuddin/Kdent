@@ -8,6 +8,7 @@ import { requireDashboardAccess } from "@/app/libs/authorization";
 import { getCurrentUserRole } from "@/app/libs/authorization";
 import { loadPatientPortal } from "@/app/actions/appointment-portal";
 import PatientPortal from "./PatientPortal";
+import PatientPortalNavigation from "./PatientPortalNavigation";
 import AccountSettings from "./content/AccountSettings";
 
 async function PatientsPage({
@@ -29,6 +30,9 @@ async function PatientsPage({
       ]);
       return (
         <div className="min-h-screen w-full overflow-y-auto p-5 py-5">
+          <div className="mx-auto max-w-5xl">
+            <PatientPortalNavigation activePage="settings" />
+          </div>
           <AccountSettings
             user={{
               name: access.session.user.name,

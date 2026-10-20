@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 import { cancelPatientAppointment } from "@/app/actions/appointment-portal";
 import UserGreeting from "./UserGreeting";
+import PatientPortalNavigation from "./PatientPortalNavigation";
 
 type Data = Awaited<
   ReturnType<
@@ -32,6 +33,7 @@ export default function PatientPortal({ data, userName }: { data: Data; userName
     <main className="bg-background min-h-screen px-4 py-10 text-white sm:px-8">
       <div className="mx-auto max-w-5xl">
         <UserGreeting name={userName} role="USER" />
+        <PatientPortalNavigation activePage="dashboard" />
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-primary text-xs font-semibold tracking-[.16em] uppercase">
