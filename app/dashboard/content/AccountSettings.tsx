@@ -12,8 +12,10 @@ import {
   Mail,
   MonitorSmartphone,
   ShieldCheck,
+  Stethoscope,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 import {
   requestAccountDeletion,
@@ -22,6 +24,9 @@ import {
   signOutOtherSessions,
   updateAccountProfile,
 } from "../../actions/account-settings";
+import { loadDoctorProfile, saveDoctorProfile } from "../../actions/doctor-profile";
+import { clinicDetails } from "../../libs/clinic";
+import UserRoleManagement from "./UserRoleManagement";
 
 export type AccountSettingsProps = {
   user: {
@@ -34,6 +39,7 @@ export type AccountSettingsProps = {
   providers: string[];
   hasPassword: boolean;
   sessionCount: number;
+  role: "USER" | "DOCTOR" | "ASSISTANT" | "ADMIN";
 };
 
 type Notice = { kind: "success" | "error"; text: string } | null;
@@ -123,6 +129,7 @@ export default function AccountSettings({
   providers,
   hasPassword,
   sessionCount: initialSessionCount,
+  role,
 }: AccountSettingsProps) {
   const [name, setName] = useState(user.name);
   const [image, setImage] = useState(user.image ?? "");
@@ -137,6 +144,11 @@ export default function AccountSettings({
   const [passwordNotice, setPasswordNotice] = useState<Notice>(null);
   const [sessionNotice, setSessionNotice] = useState<Notice>(null);
   const [deleteNotice, setDeleteNotice] = useState<Notice>(null);
+  const [doctorModal, setDoctorModal] = useState(false);
+  const [doctorLoading, setDoctorLoading] = useState(false);
+  const [doctorSaving, setDoctorSaving] = useState(false);
+  const [doctorNotice, setDoctorNotice] = useState<Notice>(null);
+  const [doctorFields, setDoctorFields] = useState({ firstName: "", lastName: "", qualifications: "", specialty: "", designation: "", bmdcRegistration: "", phone: "", email: "", chamberName: "", chamberAddress: "", digitalSignature: "" });
   const [isPending, startTransition] = useTransition();
 
   const run = (
@@ -189,6 +201,27 @@ export default function AccountSettings({
   const deleteAccount = () =>
     run(() => requestAccountDeletion(), setDeleteNotice, () => setDeleteConfirmation(""));
 
+  const openDoctorModal = async () => {
+    setDoctorModal(true);
+    setDoctorLoading(true);
+    setDoctorNotice(null);
+    const result = await loadDoctorProfile();
+    if ("error" in result) setDoctorNotice({ kind: "error", text: result.error ?? "Could not load doctor details." });
+    else setDoctorFields({
+      firstName: result.doctor.firstName ?? "", lastName: result.doctor.lastName ?? "", qualifications: result.doctor.qualifications ?? "", specialty: result.doctor.specialty ?? "", designation: result.doctor.designation ?? "", bmdcRegistration: result.doctor.bmdcRegistration ?? "", phone: result.doctor.phone ?? clinicDetails.phone, email: result.doctor.email ?? clinicDetails.email, chamberName: result.doctor.chamberName ?? clinicDetails.name, chamberAddress: result.doctor.chamberAddress ?? clinicDetails.address, digitalSignature: result.doctor.digitalSignature ?? "",
+    });
+    setDoctorLoading(false);
+  };
+
+  const submitDoctorProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDoctorSaving(true); setDoctorNotice(null);
+    const result = await saveDoctorProfile(doctorFields);
+    if ("error" in result) setDoctorNotice({ kind: "error", text: result.error ?? "Could not save doctor details." });
+    else { setDoctorNotice({ kind: "success", text: "Doctor and prescription header details saved." }); window.setTimeout(() => setDoctorModal(false), 700); }
+    setDoctorSaving(false);
+  };
+
   const initials = name
     .trim()
     .split(/\s+/)
@@ -210,6 +243,8 @@ export default function AccountSettings({
             Manage your profile, sign-in details, and account security.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+        {(role === "ADMIN" || role === "DOCTOR") && <button className="inline-flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition hover:bg-primary/15" onClick={openDoctorModal} type="button"><Stethoscope className="size-4"/> Doctor & prescription header</button>}
         <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-background/40 p-3 sm:min-w-56">
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
             {initials}
@@ -218,6 +253,7 @@ export default function AccountSettings({
             <span className="block truncate text-sm font-medium text-white">{name}</span>
             <span className="block truncate text-xs text-white/55">{user.email}</span>
           </span>
+        </div>
         </div>
       </header>
 
@@ -253,6 +289,7 @@ export default function AccountSettings({
                 disabled={isPending}
                 type="submit"
               >
+                {isPending && <LoaderCircle aria-hidden="true" className="mr-1 inline size-4 animate-spin" />}
                 Save profile
               </button>
             </div>
@@ -293,6 +330,7 @@ export default function AccountSettings({
                 disabled={isPending}
                 type="submit"
               >
+                {isPending && <LoaderCircle aria-hidden="true" className="mr-1 inline size-4 animate-spin" />}
                 Send confirmation
               </button>
             </div>
@@ -345,6 +383,7 @@ export default function AccountSettings({
                 disabled={isPending}
                 type="submit"
               >
+                {isPending && <LoaderCircle aria-hidden="true" className="mr-1 inline size-4 animate-spin" />}
                 {hasPassword ? "Update password" : "Add password"}
               </button>
             </div>
@@ -393,6 +432,7 @@ export default function AccountSettings({
                 onClick={revokeSessions}
                 type="button"
               >
+                {isPending && <LoaderCircle aria-hidden="true" className="mr-1 inline size-4 animate-spin" />}
                 Sign out other sessions
               </button>
             </div>
@@ -400,6 +440,8 @@ export default function AccountSettings({
           </div>
         </SectionCard>
       </div>
+
+      {(role === "ADMIN" || role === "DOCTOR") && <UserRoleManagement role={role} />}
 
       <section className="rounded-xl border border-rose-400/25 bg-rose-400/[0.04] p-4 sm:p-5">
         <div className="flex items-start gap-3">
@@ -425,6 +467,7 @@ export default function AccountSettings({
                 type="button"
               >
                 <Trash2 className="size-4" />
+                {isPending && <LoaderCircle aria-hidden="true" className="mr-1 inline size-4 animate-spin" />}
                 Request deletion
               </button>
             </div>
@@ -432,6 +475,28 @@ export default function AccountSettings({
           </div>
         </div>
       </section>
+
+      {doctorModal && (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-3 backdrop-blur-sm sm:p-6">
+          <section aria-labelledby="doctor-profile-title" aria-modal="true" className="flex max-h-[95dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-secondary shadow-2xl" role="dialog">
+            <header className="flex items-center justify-between border-b border-white/10 p-4 sm:p-5">
+              <div><p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Prescription setup</p><h2 className="mt-1 text-lg font-semibold text-white" id="doctor-profile-title">Doctor & clinic details</h2><p className="mt-1 text-xs text-white/50">These details appear around the centered K-Dent logo on printed prescriptions.</p></div>
+              <button aria-label="Close doctor details" className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" onClick={() => setDoctorModal(false)} type="button"><X className="size-5"/></button>
+            </header>
+            {doctorLoading ? <div className="flex items-center justify-center gap-2 p-12 text-sm text-white/60"><LoaderCircle className="size-4 animate-spin"/> Loading doctor details</div> : <form className="min-h-0 overflow-y-auto p-4 sm:p-5" onSubmit={submitDoctorProfile}>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {([
+                  ["firstName", "First name", true], ["lastName", "Last name", false], ["qualifications", "Education / qualifications", true], ["specialty", "Specialty", false], ["designation", "Designation", false], ["bmdcRegistration", "BMDC registration", false], ["phone", "Clinic phone", false], ["email", "Clinic email", false], ["chamberName", "Clinic name", false],
+                ] as const).map(([key, label, required]) => <label className="block space-y-1.5" key={key}><span className="text-xs font-medium text-white/75">{label}{required && <span className="ml-1 text-rose-300">*</span>}</span><input className="h-10 w-full rounded-lg border border-white/10 bg-background/60 px-3 text-sm text-white outline-none focus:border-primary" onChange={(event) => setDoctorFields((current) => ({ ...current, [key]: event.target.value }))} required={required} value={doctorFields[key]}/></label>)}
+                <label className="block space-y-1.5 sm:col-span-2"><span className="text-xs font-medium text-white/75">K-Dent clinic address</span><textarea className="min-h-20 w-full rounded-lg border border-white/10 bg-background/60 p-3 text-sm text-white outline-none focus:border-primary" onChange={(event) => setDoctorFields((current) => ({ ...current, chamberAddress: event.target.value }))} value={doctorFields.chamberAddress}/></label>
+                <label className="block space-y-1.5 sm:col-span-2"><span className="text-xs font-medium text-white/75">Digital signature (name or image URL)</span><input className="h-10 w-full rounded-lg border border-white/10 bg-background/60 px-3 text-sm text-white outline-none focus:border-primary" onChange={(event) => setDoctorFields((current) => ({ ...current, digitalSignature: event.target.value }))} value={doctorFields.digitalSignature}/></label>
+              </div>
+              <Feedback notice={doctorNotice}/>
+              <footer className="mt-5 flex justify-end gap-2"><button className="rounded-lg px-4 py-2 text-sm text-white/70 hover:bg-white/5" onClick={() => setDoctorModal(false)} type="button">Cancel</button><button className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50" disabled={doctorSaving} type="submit">{doctorSaving && <LoaderCircle aria-hidden="true" className="mr-1 inline size-4 animate-spin" />}{doctorSaving ? "Saving…" : "Save doctor details"}</button></footer>
+            </form>}
+          </section>
+        </div>
+      )}
 
       {isPending && (
         <span className="sr-only" role="status">

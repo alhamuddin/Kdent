@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, LogOut, Settings } from "lucide-react";
+import { Calendar, Inbox as InboxIcon, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,24 +9,34 @@ import { FaPeopleGroup } from "react-icons/fa6";
 import { GoReport } from "react-icons/go";
 import { MdDashboard } from "react-icons/md";
 import BrandWordmark from "../../components/BrandWordmark";
+import type { DashboardRole } from "@/app/libs/authorization";
 
 export type PatientSection =
-  "dashboard" | "appointments" | "patients" | "reports" | "settings";
+  "dashboard" | "appointments" | "requests" | "patients" | "reports" | "inbox" | "settings";
 
 export const navigationItems = [
   { id: "dashboard", label: "Dashboard", icon: MdDashboard },
   { id: "appointments", label: "Appointment", icon: Calendar },
+  { id: "requests", label: "Requests & schedule", icon: Calendar },
   { id: "patients", label: "Patients", icon: FaPeopleGroup },
   { id: "reports", label: "Reports", icon: GoReport },
+  { id: "inbox", label: "Inbox", icon: InboxIcon },
   { id: "settings", label: "Settings", icon: Settings },
 ] as const;
 
+export function getNavigationItems(role: DashboardRole) {
+  return role === "ASSISTANT"
+    ? navigationItems.filter((item) => item.id !== "appointments" && item.id !== "inbox")
+    : navigationItems;
+}
+
 type LeftSidebarProps = {
+  role: DashboardRole;
   activeSection: PatientSection;
   onSectionChange: (section: PatientSection) => void;
 };
 
-function LeftSidebar({ activeSection, onSectionChange }: LeftSidebarProps) {
+function LeftSidebar({ role, activeSection, onSectionChange }: LeftSidebarProps) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -45,7 +55,7 @@ function LeftSidebar({ activeSection, onSectionChange }: LeftSidebarProps) {
       </Link>
       <div className="flex flex-1 flex-col gap-4">
         <div className="flex flex-col gap-2">
-          {navigationItems.map(({ id, label, icon: Icon }) => {
+          {getNavigationItems(role).map(({ id, label, icon: Icon }) => {
             const isActive = activeSection === id;
 
             return (

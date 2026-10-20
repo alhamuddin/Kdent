@@ -3,6 +3,7 @@
 import * as z from "zod";
 import { contactSchema } from "../utils/schemas";
 import { sendContactEmail } from "./sendMail";
+import { prisma } from "../libs/prisma";
 
 export async function sendContactMessage(
   data: z.infer<typeof contactSchema>,
@@ -35,10 +36,23 @@ export async function sendContactMessage(
       return { error: "Bot verification failed. Please try again." };
     }
 
-    await sendContactEmail(validation.data);
-    return { success: "Your message has been sent." };
   } catch (error) {
-    console.error("Contact form email delivery failed", error);
-    return { error: "Your message could not be sent. Please try again." };
+    console.error("Contact form verification failed", error);
+    return { error: "Bot verification could not be completed. Please try again." };
   }
+
+  try {
+    await prisma.contactMessage.create({ data: validation.data });
+  } catch (error) {
+    console.error("Contact message could not be saved", error);
+    return { error: "Your message could not be saved. Please try again." };
+  }
+
+  try {
+    await sendContactEmail(validation.data);
+  } catch (error) {
+    console.error("Contact message email notification failed", error);
+  }
+
+  return { success: "Your message has been sent." };
 }

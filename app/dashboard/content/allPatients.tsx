@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   columnFacetingFeature,
   columnFilteringFeature,
@@ -18,9 +18,11 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import type { Column, ColumnDef, PaginationState } from "@tanstack/react-table";
-import { patientsData } from "../../data";
+import Link from "next/link";
+import type { DashboardPatient } from "../dashboard-data";
+import { useDebouncedValue } from "@/app/hooks/useDebouncedValue";
 
-type Patient = (typeof patientsData)[number];
+type Patient = DashboardPatient;
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -39,33 +41,42 @@ const features = tableFeatures({
 const columns: ColumnDef<typeof features, Patient>[] = [
   {
     id: "patient",
-    accessorFn: (patient) => `${patient.first_name} ${patient.last_name}`,
+    accessorFn: (patient) => `${patient.firstName} ${patient.lastName} ${patient.patientNumber}`,
     header: "Patient",
     filterFn: "includesString",
     sortFn: "alphanumeric",
-    cell: ({ getValue, row }) => (
+    cell: ({ row }) => (
       <div>
-        <div className="font-medium text-white">{getValue<string>()}</div>
-        <div className="text-xs text-white/60">Patient #{row.original.id}</div>
+        <Link className="block font-medium text-primary hover:underline" href={`/dashboard/patients/${row.original.id}`} rel="noreferrer" target="_blank">
+          {row.original.firstName} {row.original.lastName}
+        </Link>
+        <div className="text-xs text-white/60">{row.original.patientNumber}</div>
       </div>
     ),
   },
   { accessorKey: "age", header: "Age", sortFn: "basic" },
-  { accessorKey: "gender", header: "Gender", filterFn: "includesString" },
-  { accessorKey: "blood_type", header: "Blood type" },
-  { accessorKey: "phone_number", header: "Phone", enableSorting: false },
-  { accessorKey: "visit_date", header: "Last visit", sortFn: "alphanumeric" },
+  { accessorKey: "sex", header: "Sex", filterFn: "includesString" },
+  { accessorKey: "bloodGroup", header: "Blood group" },
+  { accessorKey: "phone", header: "Phone", enableSorting: false },
   {
-    accessorKey: "admission_status",
+    accessorKey: "lastVisit",
+    header: "Last visit",
+    sortFn: "alphanumeric",
+    cell: ({ getValue }) => {
+      const value = getValue<string | null>();
+      return value ? new Date(value).toLocaleDateString() : "No visits";
+    },
+  },
+  {
+    accessorKey: "status",
     header: "Status",
     filterFn: "includesString",
     cell: ({ getValue }) => {
       const status = getValue<string>();
       const styles: Record<string, string> = {
-        Stable: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-        Discharged: "bg-slate-100 text-slate-700 ring-slate-600/20",
-        "Under Observation": "bg-amber-50 text-amber-700 ring-amber-600/20",
-        Critical: "bg-rose-50 text-rose-700 ring-rose-600/20",
+        New: "bg-sky-400/10 text-sky-200 ring-sky-300/20",
+        "Recently seen": "bg-emerald-400/10 text-emerald-200 ring-emerald-300/20",
+        "Follow-up due": "bg-amber-400/10 text-amber-200 ring-amber-300/20",
       };
       return (
         <span
@@ -77,7 +88,7 @@ const columns: ColumnDef<typeof features, Patient>[] = [
     },
   },
   {
-    accessorKey: "diagnosis",
+    accessorKey: "lastDiagnosis",
     header: "Diagnosis",
     filterFn: "includesString",
     cell: ({ getValue }) => (
@@ -89,10 +100,12 @@ const columns: ColumnDef<typeof features, Patient>[] = [
 ];
 
 function FilterInput({
-  column,
+  value,
+  onChange,
   placeholder,
 }: {
-  column: Column<typeof features, Patient>;
+  value: string;
+  onChange: (value: string) => void;
   placeholder: string;
 }) {
   return (
@@ -100,10 +113,8 @@ function FilterInput({
       aria-label={placeholder}
       className="bg-background text-foreground focus:border-primary focus:ring-primary/20 w-full rounded-md border border-white/15 px-3 py-2 text-xs transition outline-none placeholder:text-white/45 focus:ring-2 sm:text-sm"
       placeholder={placeholder}
-      value={(column.getFilterValue() as string) ?? ""}
-      onChange={(event) =>
-        column.setFilterValue(event.target.value || undefined)
-      }
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
     />
   );
 }
@@ -139,7 +150,11 @@ function FacetSelect({
   );
 }
 
-export default function AllPatients() {
+export default function AllPatients({ patients }: { patients: Patient[] }) {
+  const [patientSearch, setPatientSearch] = useState("");
+  const [diagnosisSearch, setDiagnosisSearch] = useState("");
+  const debouncedPatientSearch = useDebouncedValue(patientSearch, 300);
+  const debouncedDiagnosisSearch = useDebouncedValue(diagnosisSearch, 300);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -147,14 +162,17 @@ export default function AllPatients() {
   const table = useTable({
     features,
     columns,
-    data: patientsData,
+    data: patients,
     state: { pagination },
     onPaginationChange: setPagination,
   });
   const patientColumn = table.getColumn("patient")!;
-  const genderColumn = table.getColumn("gender")!;
-  const statusColumn = table.getColumn("admission_status")!;
-  const diagnosisColumn = table.getColumn("diagnosis")!;
+  const genderColumn = table.getColumn("sex")!;
+  const statusColumn = table.getColumn("status")!;
+  const diagnosisColumn = table.getColumn("lastDiagnosis")!;
+
+  useEffect(() => patientColumn.setFilterValue(debouncedPatientSearch || undefined), [patientColumn, debouncedPatientSearch]);
+  useEffect(() => diagnosisColumn.setFilterValue(debouncedDiagnosisSearch || undefined), [diagnosisColumn, debouncedDiagnosisSearch]);
 
   return (
     <section className="bg-secondary/60 flex h-auto min-h-0 w-full flex-col gap-3 rounded-xl p-3 text-white sm:gap-4 sm:p-4 lg:h-full">
@@ -179,21 +197,23 @@ export default function AllPatients() {
       <div className="bg-secondary/80 flex flex-col gap-2 rounded-xl border border-white/10 p-3 md:flex-row md:flex-wrap md:items-center">
         <div className="min-w-52 flex-1">
           <FilterInput
-            column={patientColumn}
-            placeholder="Search patient name..."
+            onChange={setPatientSearch}
+            placeholder="Search patient name or number..."
+            value={patientSearch}
           />
         </div>
         <div className="min-w-52 flex-1">
           <FilterInput
-            column={diagnosisColumn}
+            onChange={setDiagnosisSearch}
             placeholder="Search diagnosis..."
+            value={diagnosisSearch}
           />
         </div>
         <FacetSelect column={genderColumn} label="genders" />
         <FacetSelect column={statusColumn} label="statuses" />
         <button
           className="rounded-md px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white sm:text-sm"
-          onClick={() => table.resetColumnFilters()}
+          onClick={() => { setPatientSearch(""); setDiagnosisSearch(""); table.resetColumnFilters(); }}
           type="button"
         >
           Clear filters

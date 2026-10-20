@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import Image from "next/image";
 import { auth } from "@/auth";
 import { signOut } from "./actions/auth-actions";
@@ -54,17 +54,17 @@ function Navbar({ session }: { session: Session | null }) {
     router.push("/login");
   };
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
-
   return (
     pathname === "/" && (
       <header
         className={`fixed top-0 right-0 left-0 border-transparent transition-all duration-500 ${isScrolled ? "glass-strong py-3" : "bg-transparent py-5"} z-50`}
       >
         <nav className="container mx-auto flex items-center justify-between px-6">
-          <Link href="/" aria-label="K-Dent home" className="transition-opacity hover:opacity-80">
+          <Link
+            href="/"
+            aria-label="K-Dent home"
+            className="transition-opacity hover:opacity-80"
+          >
             <BrandWordmark />
           </Link>
 
@@ -86,9 +86,20 @@ function Navbar({ session }: { session: Session | null }) {
           <div className="flex items-center gap-3">
             {!session && (
               <div className="hidden md:block">
-                <Buttons size="sm" onClick={() => router.push("/login")}>
-                  Login
-                </Buttons>
+                <div className="flex items-center gap-2">
+                  <Link
+                    className={buttonVariants({
+                      size: "sm",
+                      variant: "outline",
+                    })}
+                    href="/book-appointment"
+                  >
+                    Book an appointment
+                  </Link>
+                  <Buttons size="sm" onClick={() => router.push("/login")}>
+                    Login
+                  </Buttons>
+                </div>
               </div>
             )}
             {session && (
@@ -108,16 +119,18 @@ function Navbar({ session }: { session: Session | null }) {
                   <DropdownMenuContent className="">
                     <DropdownMenuGroup className="my-5">
                       <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                      <DropdownMenuItem>Profile</DropdownMenuItem>
                       <DropdownMenuItem>
                         {" "}
                         <Link href="/dashboard">Dashboard</Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Link href="/book-appointment">
+                          Book an appointment
+                        </Link>
+                      </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                      <DropdownMenuItem>Team</DropdownMenuItem>
-                      <DropdownMenuItem>Subscription</DropdownMenuItem>
                       <DropdownMenuItem>
                         <button onClick={handleSignOut}>Sign Out</button>
                       </DropdownMenuItem>
@@ -160,25 +173,49 @@ function Navbar({ session }: { session: Session | null }) {
               ))}
 
               {session ? (
-                <Button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    void handleSignOut();
-                  }}
-                  size="sm"
-                >
-                  Log Out!
-                </Button>
+                <>
+                  <Link
+                    className={buttonVariants({
+                      size: "sm",
+                      variant: "outline",
+                    })}
+                    href="/book-appointment"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Book an appointment
+                  </Link>
+                  <Button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      void handleSignOut();
+                    }}
+                    size="sm"
+                  >
+                    Log Out!
+                  </Button>
+                </>
               ) : (
-                <Button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    router.push("/login");
-                  }}
-                  size="sm"
-                >
-                  Log In!
-                </Button>
+                <>
+                  <Link
+                    className={buttonVariants({
+                      size: "sm",
+                      variant: "outline",
+                    })}
+                    href="/book-appointment"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Book an appointment
+                  </Link>
+                  <Button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      router.push("/login");
+                    }}
+                    size="sm"
+                  >
+                    Log In!
+                  </Button>
+                </>
               )}
             </div>
           </div>

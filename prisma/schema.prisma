@@ -14,6 +14,25 @@ enum Sex {
   UNKNOWN
 }
 
+enum UserRole {
+  USER
+  DOCTOR
+  ASSISTANT
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum AppointmentSource {
+  ONLINE
+  OFFLINE
+}
+
 enum PrescriptionStatus {
   DRAFT
   SIGNED
@@ -45,15 +64,6 @@ enum MedicationRoute {
   OTHER
 }
 
-enum DoseTiming {
-  BEFORE_FOOD
-  AFTER_FOOD
-  WITH_FOOD
-  EMPTY_STOMACH
-  ANY_TIME
-  OTHER
-}
-
 enum InvestigationType {
   LABORATORY
   IMAGING
@@ -82,34 +92,27 @@ enum AllergySeverity {
   UNKNOWN
 }
 
-enum FollowUpStatus {
-  SCHEDULED
-  COMPLETED
-  MISSED
-  CANCELLED
-}
-
 model Patient {
-  id                    String   @id @default(cuid())
-  patientNumber         String   @unique
-  firstName             String
-  lastName              String?
-  dateOfBirth           DateTime? @db.Date
-  sex                   Sex      @default(UNKNOWN)
-  phone                 String?
-  email                 String?
-  address               String?
-  bloodGroup            String?
-  emergencyContactName  String?
-  emergencyContactPhone String?
-  guardianName          String?
-  guardianPhone         String?
-  createdAt             DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+  id            String    @id @default(cuid())
+  patientNumber String    @unique
+  firstName     String
+  lastName      String?
+  dateOfBirth   DateTime? @db.Date
+  sex           Sex       @default(OTHER)
+  phone         String?
+  email         String?
+  heightCm      Decimal?  @db.Decimal(5, 2)
+  weightKg      Decimal?  @db.Decimal(6, 2)
+  userId        String?   @unique
+  isRegistered  Boolean   @default(true)
+  bloodGroup    String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
 
   prescriptions Prescription[]
   allergies     PatientAllergy[]
   appointments  Appointment[]
+  user          User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model Doctor {
@@ -125,22 +128,32 @@ model Doctor {
   chamberName      String?
   chamberAddress   String?
   digitalSignature String?
+  userId           String?  @unique
   createdAt        DateTime @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime @updatedAt @db.Timestamptz(3)
 
+  user          User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   prescriptions Prescription[]
   appointments  Appointment[]
+  schedules     DoctorSchedule[]
 }
 
 model Appointment {
-  id             String   @id @default(cuid())
-  patientId      String
-  doctorId       String
-  scheduledAt    DateTime @db.Timestamptz(3)
-  chiefComplaint String?
-  notes          String?
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  id                String            @id @default(cuid())
+  patientId         String
+  doctorId          String
+  scheduledAt       DateTime          @db.Timestamptz(3)
+  chiefComplaint    String?
+  notes             String?
+  createdAt         DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @db.Timestamptz(3)
+  status            AppointmentStatus @default(ACCEPTED)
+  source            AppointmentSource @default(OFFLINE)
+  acceptedAt        DateTime?         @db.Timestamptz(3)
+  serialNumber      Int?
+  requestedByUserId String?
+  clinicName        String?
+  clinicAddress     String?
 
   patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
   doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Restrict)
@@ -148,6 +161,25 @@ model Appointment {
 
   @@index([patientId, scheduledAt])
   @@index([doctorId, scheduledAt])
+  @@index([doctorId, status, createdAt])
+}
+
+model DoctorSchedule {
+  id            String   @id @default(cuid())
+  doctorId      String
+  weekday       Int
+  clinicName    String   @default("Main clinic")
+  clinicAddress String?
+  startTime     String
+  endTime       String
+  slotMinutes   Int      @default(20)
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, weekday, enabled])
 }
 
 model Prescription {
@@ -160,47 +192,19 @@ model Prescription {
 
   issuedAt DateTime           @default(now()) @db.Timestamptz(3)
   status   PrescriptionStatus @default(DRAFT)
+  signedAt DateTime?          @db.Timestamptz(3)
 
-  chiefComplaint          String?
-  historyOfPresentIllness String?
-  pastMedicalHistory      String?
-  pastSurgicalHistory     String?
-  familyHistory           String?
-  socialHistory           String?
-  currentMedicationNotes  String?
-  clinicalNotes           String?
-
-  examinationFindings String?
-  generalAppearance   String?
-  systemicExamination String?
-
-  weightKg        Decimal? @db.Decimal(6, 2)
-  heightCm        Decimal? @db.Decimal(6, 2)
-  temperatureC    Decimal? @db.Decimal(4, 1)
-  systolicBP      Int?
-  diastolicBP     Int?
-  pulseBpm        Int?
-  respiratoryRate Int?
-  oxygenSaturation Decimal? @db.Decimal(5, 2)
-  bmi              Decimal? @db.Decimal(5, 2)
-  vitalNotes       String?
-
+  chiefComplaint      String?
+  medicalHistory      String?
+  examination         String?
+  investigationNotes  String?
   treatmentPlan       String?
-  dietAdvice          String?
-  lifestyleAdvice     String?
-  precautions         String?
+  clinicalNotes       String?
   patientInstructions String?
-  referralNotes       String?
-
-  followUpDate   DateTime? @db.Timestamptz(3)
-  followUpNotes  String?
-  reviewRequired Boolean   @default(false)
-
-  signedAt           DateTime? @db.Timestamptz(3)
-  signatureUrl       String?
-  cancellationReason String?
-  amendedFromId      String?
-  version            Int       @default(1)
+  weightKg            Decimal? @db.Decimal(6, 2)
+  bmi                 Decimal? @db.Decimal(5, 2)
+  systolicBP          Int?
+  diastolicBP         Int?
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -211,9 +215,6 @@ model Prescription {
   diagnoses      PrescriptionDiagnosis[]
   medications    PrescriptionMedication[]
   investigations PrescriptionInvestigation[]
-  procedures     PrescriptionProcedure[]
-  followUps      FollowUp[]
-  referrals      Referral[]
 
   @@index([patientId, issuedAt])
   @@index([doctorId, issuedAt])
@@ -234,12 +235,12 @@ model Diagnosis {
 }
 
 model PrescriptionDiagnosis {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   prescriptionId String
   diagnosisId    String
   type           DiagnosisType @default(CONFIRMED)
   notes          String?
-  isPrimary      Boolean      @default(false)
+  isPrimary      Boolean       @default(false)
 
   prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
   diagnosis    Diagnosis    @relation(fields: [diagnosisId], references: [id], onDelete: Restrict)
@@ -248,149 +249,53 @@ model PrescriptionDiagnosis {
   @@index([diagnosisId])
 }
 
-model Medication {
-  id           String  @id @default(cuid())
-  genericName  String
-  brandName    String?
-  strength     String?
-  dosageForm   String?
-  manufacturer String?
-  description  String?
-  isActive     Boolean @default(true)
-
-  prescriptionItems PrescriptionMedication[]
-
-  @@index([genericName])
-  @@index([brandName])
-}
-
 model PrescriptionMedication {
-  id             String  @id @default(cuid())
+  id             String @id @default(cuid())
   prescriptionId String
-  medicationId   String?
 
-  medicineName String
-  genericName  String?
-  strength     String?
-  dosageForm   String?
-
-  dose             String
-  route            MedicationRoute @default(ORAL)
-  frequency        String
-  durationValue    Int?
-  durationUnit     String?
-  quantity         Decimal? @db.Decimal(10, 2)
-  quantityUnit     String?
-  timing           DoseTiming @default(ANY_TIME)
-  instructions     String?
-  prn              Boolean   @default(false)
-  prnReason        String?
-  maximumDailyDose String?
-  refills          Int       @default(0)
-  sortOrder        Int       @default(0)
+  medicineName  String
+  dose          String
+  route         MedicationRoute @default(ORAL)
+  frequency     String
+  durationValue Int?
+  durationUnit  String?
+  instructions  String?
+  sortOrder     Int             @default(0)
 
   prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  medication   Medication?  @relation(fields: [medicationId], references: [id], onDelete: SetNull)
 
   @@index([prescriptionId, sortOrder])
-  @@index([medicationId])
-}
-
-model Investigation {
-  id          String            @id @default(cuid())
-  code        String?           @unique
-  name        String
-  type        InvestigationType
-  description String?
-  isActive    Boolean           @default(true)
-
-  prescriptionItems PrescriptionInvestigation[]
-
-  @@index([name])
 }
 
 model PrescriptionInvestigation {
-  id              String @id @default(cuid())
-  prescriptionId  String
-  investigationId String?
+  id             String @id @default(cuid())
+  prescriptionId String
 
   investigationName String
   type              InvestigationType
   priority          InvestigationPriority @default(ROUTINE)
   status            InvestigationStatus   @default(ORDERED)
-  clinicalReason    String?
-  instructions      String?
-  orderedAt         DateTime @default(now()) @db.Timestamptz(3)
-  completedAt       DateTime? @db.Timestamptz(3)
 
-  resultSummary       String?
-  resultNotes         String?
-  resultAttachmentUrl String?
-
-  prescription  Prescription    @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  investigation Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
 
   @@index([prescriptionId, status])
-  @@index([investigationId])
 }
 
 model PatientAllergy {
-  id         String         @id @default(cuid())
+  id         String          @id @default(cuid())
   patientId  String
   substance  String
   reaction   String?
   severity   AllergySeverity @default(UNKNOWN)
   notes      String?
-  verifiedAt DateTime?      @db.Timestamptz(3)
-  isActive   Boolean        @default(true)
-  createdAt  DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt  DateTime       @updatedAt @db.Timestamptz(3)
+  verifiedAt DateTime?       @db.Timestamptz(3)
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
 
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
 
   @@index([patientId, isActive])
-}
-
-model PrescriptionProcedure {
-  id             String    @id @default(cuid())
-  prescriptionId String
-  name           String
-  instructions   String?
-  scheduledAt    DateTime? @db.Timestamptz(3)
-  notes          String?
-
-  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-
-  @@index([prescriptionId])
-}
-
-model Referral {
-  id             String @id @default(cuid())
-  prescriptionId String
-  specialty      String?
-  referredTo     String?
-  facilityName   String?
-  reason         String
-  urgency        InvestigationPriority @default(ROUTINE)
-  notes          String?
-
-  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-
-  @@index([prescriptionId])
-}
-
-model FollowUp {
-  id             String         @id @default(cuid())
-  prescriptionId String
-  scheduledAt    DateTime       @db.Timestamptz(3)
-  status         FollowUpStatus @default(SCHEDULED)
-  reason         String?
-  notes          String?
-  completedAt    DateTime?      @db.Timestamptz(3)
-
-  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-
-  @@index([scheduledAt, status])
 }
 
 model User {
@@ -399,13 +304,27 @@ model User {
   email         String
   emailVerified Boolean
   image         String?
+  role          UserRole  @default(USER)
   createdAt     DateTime
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  doctor        Doctor?
+  patient       Patient?
 
   @@unique([email])
   @@map("user")
+}
+
+model ContactMessage {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  message   String    @db.Text
+  readAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([readAt, createdAt])
 }
 
 model Session {

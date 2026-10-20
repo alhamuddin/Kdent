@@ -26,6 +26,17 @@
 }
 
 @layer base {
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
   html {
     scroll-behavior: smooth;
   }
@@ -38,6 +49,19 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-geist-sans), sans-serif;
+  }
+
+  input[type="date"],
+  input[type="datetime-local"] {
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: brightness(0) invert(1);
+    opacity: 1;
   }
 
   .font-serif {
@@ -232,5 +256,342 @@
     box-shadow:
       0 0 40px color-mix(in srgb, var(--color-primary) 35%, transparent),
       0 0 80px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  }
+}
+
+.rx-print-sheet {
+  display: none;
+}
+
+.print-only-visits {
+  display: none;
+}
+
+.print-date {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  body:has(#detailed-visit-report) .overflow-auto,
+  body:has(#detailed-visit-report) .overflow-hidden,
+  body:has(#detailed-visit-report) .overflow-y-auto {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .rx-print-sheet,
+  .rx-print-sheet * {
+    visibility: visible !important;
+  }
+
+  .rx-print-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #171717 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
+    overflow: hidden !important;
+  }
+
+  .rx-print-sheet * {
+    color: #171717 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .rx-paper {
+    box-sizing: border-box;
+    display: flex;
+    width: 210mm;
+    height: 297mm;
+    flex-direction: column;
+    padding: 8mm 9mm 5mm;
+    border: 0.35mm solid #b8b2a9;
+  }
+
+  .rx-paper-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 24mm minmax(0, 1.1fr);
+    gap: 5mm;
+    align-items: center;
+    min-height: 41mm;
+    padding-bottom: 4mm;
+    border-bottom: 0.4mm solid #827b70;
+  }
+
+  .rx-paper-header > img {
+    width: 23mm;
+    height: 20mm;
+    object-fit: contain;
+  }
+
+  .rx-paper-clinic,
+  .rx-paper-doctor {
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+    font-size: 7.4pt;
+  }
+
+  .rx-paper-clinic b,
+  .rx-paper-doctor strong {
+    color: #963f3d !important;
+    font-size: 11pt;
+    line-height: 1.15;
+  }
+
+  .rx-paper-doctor {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .rx-paper-patient {
+    display: grid;
+    grid-template-columns: 1.5fr 0.7fr 0.7fr 1fr;
+    gap: 2mm 4mm;
+    padding: 3mm 2mm;
+    border-bottom: 0.35mm solid #827b70;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 10pt;
+    font-style: italic;
+  }
+
+  .rx-paper-patient span:first-child {
+    grid-column: span 2;
+  }
+
+  .rx-paper-patient span:last-child {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 7pt;
+    font-style: normal;
+    color: #69645d !important;
+  }
+
+  .rx-paper-body {
+    display: grid;
+    min-height: 0;
+    flex: 1;
+    grid-template-columns: 34% 66%;
+    border-bottom: 0.35mm solid #827b70;
+  }
+
+  .rx-paper-clinical {
+    padding: 3mm 4mm 3mm 2mm;
+    border-right: 0.35mm solid #827b70;
+  }
+
+  .rx-paper-clinical section {
+    margin: 0 0 4mm;
+    break-inside: avoid;
+  }
+
+  .rx-paper-clinical h2,
+  .rx-paper-rx h2 {
+    margin: 0 0 1mm;
+    color: #655e56 !important;
+    font-size: 8pt;
+    font-weight: 700;
+  }
+
+  .rx-paper-clinical p,
+  .rx-paper-rx p,
+  .rx-paper-rx ul,
+  .rx-paper-rx ol {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .rx-paper-rx {
+    position: relative;
+    padding: 8mm 4mm 4mm 11mm;
+  }
+
+  .rx-mark {
+    position: absolute;
+    top: 3mm;
+    left: 3mm;
+    color: #59678c !important;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 38pt;
+    font-style: italic;
+    line-height: 1;
+  }
+
+  .rx-paper-meta {
+    display: flex;
+    justify-content: space-between;
+    margin: -5mm 0 7mm;
+    color: #746d64 !important;
+    font-size: 7pt;
+  }
+
+  .rx-paper-rx ol,
+  .rx-paper-rx ul {
+    padding-left: 5mm;
+  }
+
+  .rx-paper-rx li {
+    margin-bottom: 5mm;
+    padding-left: 1mm;
+    break-inside: avoid;
+  }
+
+  .rx-paper-rx li p {
+    margin-top: 1mm;
+  }
+
+  .rx-paper-empty {
+    color: #777 !important;
+    font-style: italic;
+  }
+
+  .rx-paper-signature {
+    display: flex;
+    min-height: 25mm;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    margin: 12mm 0 0 auto;
+    width: 48mm;
+    border-top: 0.3mm solid #777;
+    padding-top: 1mm;
+    font-size: 8pt;
+  }
+
+  .rx-paper-signature span {
+    display: block;
+    height: 17mm;
+    margin-top: -18mm;
+  }
+
+  .rx-paper-signature img {
+    max-width: 42mm;
+    max-height: 17mm;
+    object-fit: contain;
+  }
+
+  .rx-paper-signature small {
+    color: #69645d !important;
+    font-size: 7pt;
+  }
+
+  .rx-paper-footer {
+    padding-top: 3mm;
+    font-size: 7pt;
+  }
+
+  .rx-paper-footer-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8mm;
+    min-height: 18mm;
+  }
+
+  .rx-paper-footer-cols > div {
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+  }
+
+  .rx-paper-footer-cols b {
+    color: #963f3d !important;
+    font-size: 8pt;
+  }
+
+  .rx-paper-hotline {
+    margin-top: 2mm;
+    border: 0.4mm solid #59678c;
+    border-radius: 4mm;
+    padding: 2mm;
+    color: #fff !important;
+    background: #59678c !important;
+    text-align: center;
+    font-size: 8pt;
+    font-weight: 700;
+  }
+
+  #detailed-visit-report,
+  #detailed-visit-report * {
+    visibility: visible !important;
+    color: #171717 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  #detailed-visit-report {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    display: block !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    padding: 8mm !important;
+    background: #fff !important;
+    color: #171717 !important;
+  }
+
+  #detailed-visit-report .print-hidden {
+    display: none !important;
+  }
+
+  #detailed-visit-report .print-date {
+    display: block !important;
+  }
+
+  #detailed-visit-report .print-report-table {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #detailed-visit-report .screen-only-visits {
+    display: none !important;
+  }
+
+  #detailed-visit-report .print-only-visits {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-collapse: collapse !important;
+    font-size: 7pt !important;
+  }
+
+  #detailed-visit-report .print-only-visits tr {
+    break-inside: avoid;
+  }
+
+  #detailed-visit-report .print-only-visits th,
+  #detailed-visit-report .print-only-visits td {
+    border: 0.2mm solid #bbb !important;
+    padding: 1.5mm !important;
+    vertical-align: top !important;
+  }
+
+  #detailed-visit-report header {
+    border-color: #bbb !important;
   }
 }

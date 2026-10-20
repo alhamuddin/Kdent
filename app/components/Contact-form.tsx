@@ -187,6 +187,7 @@ function ContactForm() {
               type="submit"
               size="lg"
               disabled={isSubmitting}
+              loading={isSubmitting}
             >
               {isSubmitting ? (
                 <>Sending...</>

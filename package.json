@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:make-admin": "node prisma/make-admin.mjs",
+    "db:seed:mock-patients": "node prisma/seed-mock-patients.mjs",
     "postinstall": "prisma generate",
     "lint": "eslint"
   },

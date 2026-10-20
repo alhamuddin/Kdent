@@ -1,4 +1,5 @@
 import React from "react";
+import { LoaderCircle } from "lucide-react";
 
 function Buttons({
   className,
@@ -7,6 +8,7 @@ function Buttons({
   onClick,
   type,
   disabled,
+  loading = false,
   ...props
 }: {
   className?: string;
@@ -15,6 +17,7 @@ function Buttons({
   onClick?: () => void;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
+  loading?: boolean;
   props?: React.ButtonHTMLAttributes<HTMLButtonElement>;
 }) {
   const baseClasses =
@@ -29,12 +32,14 @@ function Buttons({
   return (
     <button
       {...props}
-      disabled={disabled}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
       type={type}
       onClick={onClick}
       className={classes}
     >
       <span className="relative flex items-center justify-center gap-2">
+        {loading && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
         {children}
       </span>
     </button>
