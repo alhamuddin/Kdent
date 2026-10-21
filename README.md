@@ -22,10 +22,12 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Search engine configuration
 
-SEO uses `https://kdent.vercel.com` as the canonical public origin for canonical
-URLs, the sitemap, social image URLs, and structured data. Set
-`NEXT_PUBLIC_SITE_URL` to a different public origin (with no path) only if the
-clinic's canonical domain changes.
+Set `NEXT_PUBLIC_SITE_URL` to `https://kdent.vercel.app` in the deployment
+environment before a production build. It is used for canonical URLs, the
+sitemap, social image URLs, and the clinic URL in structured data. Production
+builds fail if this value is missing or invalid rather than publishing metadata
+with an incorrect domain. The ignored local `.env` file also uses this URL for
+development.
 
 ## Learn More
 

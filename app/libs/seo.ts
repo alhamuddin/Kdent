@@ -1,6 +1,15 @@
 export function getSiteUrl(): URL | undefined {
-  const configuredSiteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://kdent.vercel.com";
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (!configuredSiteUrl) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "Set NEXT_PUBLIC_SITE_URL to the canonical public origin before building for production.",
+      );
+    }
+
+    return undefined;
+  }
 
   const siteUrl = new URL(configuredSiteUrl);
   if (
