@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Inbox as InboxIcon, LogOut, Settings } from "lucide-react";
+import { Calendar, House, Inbox as InboxIcon, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,13 @@ function LeftSidebar({ role, activeSection, onSectionChange }: LeftSidebarProps)
         className="my-4 flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
         href="/"
       >
-        <Image src="/kdent-logo.svg" alt="K-Dent Logo" width={40} height={40} />
+        <Image
+          src="/kdent-logo.svg"
+          alt="K-Dent Logo"
+          width={58}
+          height={40}
+          className="h-10 w-auto"
+        />
         <BrandWordmark compact />
       </Link>
       <div className="flex flex-1 flex-col gap-4">
@@ -77,6 +83,13 @@ function LeftSidebar({ role, activeSection, onSectionChange }: LeftSidebarProps)
           })}
         </div>
       </div>
+      <Link
+        className="text-muted-foreground flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition hover:bg-background/70 hover:text-white"
+        href="/"
+      >
+        <House aria-hidden="true" className="size-4" />
+        Home
+      </Link>
       <Button
         variant="ghost"
         className="text-muted-foreground mt-auto w-full justify-start"

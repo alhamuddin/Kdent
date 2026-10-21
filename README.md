@@ -20,6 +20,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Search engine configuration
+
+SEO uses `https://kdent.vercel.com` as the canonical public origin for canonical
+URLs, the sitemap, social image URLs, and structured data. Set
+`NEXT_PUBLIC_SITE_URL` to a different public origin (with no path) only if the
+clinic's canonical domain changes.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

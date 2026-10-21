@@ -5,6 +5,27 @@ import { auth } from "@/auth";
 import { getPublicAppointmentOptions } from "@/app/actions/appointment-portal";
 import { buttonVariants } from "@/components/ui/button";
 import BookingForm from "./booking-form";
+import type { Metadata } from "next";
+import { getSiteUrl } from "../libs/seo";
+
+const siteUrl = getSiteUrl();
+
+export const metadata: Metadata = {
+  title: "Book a Dental Appointment in Chittagong",
+  description:
+    "Request a dental appointment at K-Dent Dental Healthcare Center in Chowdhury Hat, Chittagong. Choose from available clinic times online.",
+  openGraph: {
+    title: "Book a Dental Appointment in Chittagong",
+    description:
+      "Request a dental appointment at K-Dent Dental Healthcare Center in Chowdhury Hat, Chittagong. Choose from available clinic times online.",
+  },
+  twitter: {
+    title: "Book a Dental Appointment in Chittagong",
+    description:
+      "Request a dental appointment at K-Dent Dental Healthcare Center in Chowdhury Hat, Chittagong. Choose from available clinic times online.",
+  },
+  ...(siteUrl ? { alternates: { canonical: "/book-appointment" } } : {}),
+};
 
 export default async function BookAppointmentPage() {
   const [session, options] = await Promise.all([

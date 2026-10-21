@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { House } from "lucide-react";
 import LeftSidebar, {
   getNavigationItems,
   type PatientSection,
@@ -38,6 +40,13 @@ export default function PatientWorkspace({
         aria-label="Patient sections"
         className="bg-secondary/60 col-span-full flex [scrollbar-width:none] gap-1 overflow-x-auto rounded-xl p-1.5 [-ms-overflow-style:none] lg:hidden [&::-webkit-scrollbar]:hidden"
       >
+        <Link
+          className="flex min-w-fit items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-white/75 transition hover:bg-white/10 hover:text-white sm:text-sm"
+          href="/"
+        >
+          <House aria-hidden="true" className="size-4" />
+          Home
+        </Link>
         {navigation.map(({ id, label, icon: Icon }) => (
           <button
             aria-current={activeSection === id ? "page" : undefined}

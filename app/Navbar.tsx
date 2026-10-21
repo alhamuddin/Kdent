@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Buttons from "./components/Button";
-import { Menu, X } from "lucide-react";
+import { LayoutDashboard, Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -141,17 +141,19 @@ function Navbar({ session }: { session: Session | null }) {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            aria-controls="mobile-navigation"
-            aria-expanded={isMobileMenuOpen}
-            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-            className="text-foreground cursor-pointer p-2 md:hidden"
-            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            type="button"
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Mobile menu control */}
+          <div className="flex items-center gap-1 md:hidden">
+            <button
+              aria-controls="mobile-navigation"
+              aria-expanded={isMobileMenuOpen}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              className="text-foreground cursor-pointer p-2"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              type="button"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </nav>
         {/* Mobile menu */}
 
@@ -171,6 +173,15 @@ function Navbar({ session }: { session: Session | null }) {
                   {link.name}
                 </a>
               ))}
+
+              <Link
+                className={`${buttonVariants({ size: "sm", variant: "outline" })} justify-center gap-2`}
+                href="/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <LayoutDashboard aria-hidden="true" size={16} />
+                Dashboard
+              </Link>
 
               {session ? (
                 <>

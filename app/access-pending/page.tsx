@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { auth } from "@/auth";
+
+export const metadata: Metadata = {
+  title: "Account access pending",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function AccessPendingPage() {
   const session = await auth.api.getSession({ headers: await headers() });

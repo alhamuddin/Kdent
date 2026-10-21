@@ -100,8 +100,8 @@ function ContactForm() {
 
   return (
     <div>
-      <div className="relative container mx-auto grid max-w-5xl gap-6 px-0 sm:gap-12 sm:px-6 lg:grid-cols-2">
-        <div className="glass border-primary/30 animate-fade-in animation-delay-300 rounded-3xl border p-8">
+      <div className="relative container mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 px-0 sm:gap-12 sm:px-6 lg:grid-cols-2">
+        <div className="glass border-primary/30 animate-fade-in animation-delay-300 min-w-0 rounded-3xl border p-5 sm:p-8">
           <form className="space-y-6" noValidate onSubmit={submitForm}>
             <div>
               <label htmlFor="name" className="mb-2 block text-sm font-medium">
@@ -166,6 +166,7 @@ function ContactForm() {
             <Turnstile
               ref={turnstileRef}
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              options={{ size: "flexible" }}
               onSuccess={setTurnstileToken}
               onExpire={() => setTurnstileToken(null)}
               onError={() => setServerError("Bot verification could not be completed. Please refresh the challenge.")}
@@ -206,10 +207,10 @@ function ContactForm() {
           </form>
         </div>
 
-        <div>
+        <div className="min-w-0">
           {/* Contact Info */}
           <div className="animate-fade-in animation-delay-400 space-y-6">
-            <div className="glass rounded-3xl p-8">
+            <div className="glass min-w-0 rounded-3xl p-5 sm:p-8">
               <h3 className="mb-6 text-xl font-semibold">
                 Contact Information
               </h3>
@@ -218,16 +219,16 @@ function ContactForm() {
                   <a
                     key={i}
                     href={item.href}
-                    className="hover:bg-surface group flex items-center gap-4 rounded-xl p-4 transition-colors"
+                    className="hover:bg-surface group flex min-w-0 items-start gap-3 rounded-xl p-3 transition-colors sm:items-center sm:gap-4 sm:p-4"
                   >
-                    <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-colors">
+                    <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors">
                       <item.icon className="text-primary h-5 w-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="text-muted-foreground text-sm">
                         {item.label}
                       </div>
-                      <div className="font-medium">{item.value}</div>
+                      <div className="font-medium break-words">{item.value}</div>
                     </div>
                   </a>
                 ))}
@@ -235,7 +236,7 @@ function ContactForm() {
             </div>
 
             {/* Availability Card */}
-            <div className="glass border-primary/30 rounded-3xl border p-8">
+            <div className="glass border-primary/30 min-w-0 rounded-3xl border p-5 sm:p-8">
               <div className="mb-4 flex items-center gap-3">
                 <span className="h-3 w-3 animate-pulse rounded-full bg-green-500" />
                 <span className="font-medium">Currently Available</span>
