@@ -11,11 +11,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string | string[] }>;
+}) {
   const session = await serverSession();
 
   if (session) {
     redirect("/dashboard");
   }
-  return <LoginForm />; //<AuthClientPage />;
+  const params = await searchParams;
+  return <LoginForm emailVerified={params.verified === "1"} />;
 }

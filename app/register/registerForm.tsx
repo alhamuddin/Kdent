@@ -1,9 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, LoaderCircle, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  LoaderCircle,
+  TriangleAlert,
+} from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -14,7 +18,7 @@ import { registerSchema } from "../utils/schemas";
 
 export default function RegisterForm() {
   const [serverError, setServerError] = useState("");
-  const router = useRouter();
+  const [registrationSent, setRegistrationSent] = useState(false);
   const {
     register,
     formState: { errors, isSubmitting },
@@ -32,12 +36,40 @@ export default function RegisterForm() {
         setServerError(result.error);
         return;
       }
-      router.push("/dashboard");
-      router.refresh();
+      setRegistrationSent(true);
     } catch {
       setServerError("Your account could not be created. Please try again.");
     }
   };
+
+  if (registrationSent) {
+    return (
+      <AuthShell
+        description="One quick step remains before you can sign in to K-Dent."
+        eyebrow="Check your inbox"
+        title="Verify your email"
+      >
+        <div className="space-y-5">
+          <p
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm leading-6 text-primary"
+            role="status"
+          >
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+            If this address can be registered, verification instructions have
+            been sent by email. Open the link to verify your account before
+            signing in. Check your spam folder if you don&apos;t see the email.
+          </p>
+          <Link
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/20 focus-visible:outline-none"
+            href="/login"
+          >
+            Go to sign in <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell

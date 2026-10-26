@@ -39,8 +39,16 @@ export async function sendContactEmail({ name, email, message }: ContactMessage)
 export async function sendNewEmailVerification(email: string, url: string) {
   await sendKdentMail(
     email,
-    "Verify your new K-Dent email address",
-    `<p>Confirm your new email address for K-Dent.</p><p><a href="${escapeHtml(url)}">Verify email address</a></p>`,
+    "Verify your K-Dent email address",
+    `<p>Confirm this email address to finish setting up your K-Dent account. You must verify it before signing in.</p><p><a href="${escapeHtml(url)}">Verify email address</a></p><p>If you did not create a K-Dent account, you can ignore this email.</p>`,
+  );
+}
+
+export async function sendPasswordResetEmail(email: string, url: string) {
+  await sendKdentMail(
+    email,
+    "Reset your K-Dent password",
+    `<p>A request was made to reset your K-Dent password.</p><p>This link expires in one hour and can only be used once.</p><p><a href="${escapeHtml(url)}">Reset password</a></p><p>If you did not request a password reset, you can ignore this email.</p>`,
   );
 }
 

@@ -126,7 +126,7 @@ function Service() {
 
         {/* View All CTA */}
         <div className="animate-fade-in animation-delay-500 mt-12 text-center">
-          <AnimatedBorderButton>
+          <AnimatedBorderButton href="/services">
             View All Services
             <ArrowUpRight className="h-5 w-5" />
           </AnimatedBorderButton>

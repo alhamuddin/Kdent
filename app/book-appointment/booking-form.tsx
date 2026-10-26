@@ -31,6 +31,9 @@ type BookingFormProps = {
   loggedIn: boolean;
   email: string;
   name: string;
+  phone?: string;
+  heightCm?: string;
+  weightKg?: string;
 };
 
 function clinicDateToday() {
@@ -50,6 +53,9 @@ export default function BookingForm({
   loggedIn,
   email,
   name,
+  phone = "",
+  heightCm = "",
+  weightKg = "",
 }: BookingFormProps) {
   const router = useRouter();
   const [doctorId, setDoctorId] = useState(doctors[0]?.id ?? "");
@@ -128,7 +134,10 @@ export default function BookingForm({
       <PatientDetailsFields
         email={email}
         firstName={name.trim().split(/\s+/)[0] ?? ""}
+        heightCm={heightCm}
         lastName={name.trim().split(/\s+/).slice(1).join(" ")}
+        phone={phone}
+        weightKg={weightKg}
       />
 
       <label className="space-y-1 text-sm">

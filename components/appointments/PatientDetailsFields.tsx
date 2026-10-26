@@ -6,6 +6,15 @@ type PatientDetailsFieldsProps = {
   heightCm?: string;
   weightKg?: string;
   fieldClassName?: string;
+  values?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+    heightCm?: string;
+    weightKg?: string;
+  };
+  onChange?: (field: string, value: string) => void;
 };
 
 const inputClassName =
@@ -19,14 +28,23 @@ export default function PatientDetailsFields({
   heightCm = "",
   weightKg = "",
   fieldClassName = "",
+  values,
+  onChange,
 }: PatientDetailsFieldsProps) {
+  const isControlled = values !== undefined;
+
   return (
     <>
       <label className={`space-y-1 text-sm ${fieldClassName}`}>
         <span>First name</span>
         <input
           className={inputClassName}
-          defaultValue={firstName}
+          {...(isControlled
+            ? {
+                value: values.firstName ?? "",
+                onChange: (e) => onChange?.("firstName", e.target.value),
+              }
+            : { defaultValue: firstName })}
           name="firstName"
           required
         />
@@ -35,19 +53,39 @@ export default function PatientDetailsFields({
         <span>Last name</span>
         <input
           className={inputClassName}
-          defaultValue={lastName}
+          {...(isControlled
+            ? {
+                value: values.lastName ?? "",
+                onChange: (e) => onChange?.("lastName", e.target.value),
+              }
+            : { defaultValue: lastName })}
           name="lastName"
         />
       </label>
       <label className={`space-y-1 text-sm ${fieldClassName}`}>
         <span>Phone</span>
-        <input className={inputClassName} defaultValue={phone} name="phone" required />
+        <input
+          className={inputClassName}
+          {...(isControlled
+            ? {
+                value: values.phone ?? "",
+                onChange: (e) => onChange?.("phone", e.target.value),
+              }
+            : { defaultValue: phone })}
+          name="phone"
+          required
+        />
       </label>
       <label className={`space-y-1 text-sm ${fieldClassName}`}>
         <span>Email (optional)</span>
         <input
           className={inputClassName}
-          defaultValue={email}
+          {...(isControlled
+            ? {
+                value: values.email ?? "",
+                onChange: (e) => onChange?.("email", e.target.value),
+              }
+            : { defaultValue: email })}
           name="email"
           type="email"
         />
@@ -56,7 +94,12 @@ export default function PatientDetailsFields({
         <span>Height in cm (optional)</span>
         <input
           className={inputClassName}
-          defaultValue={heightCm}
+          {...(isControlled
+            ? {
+                value: values.heightCm ?? "",
+                onChange: (e) => onChange?.("heightCm", e.target.value),
+              }
+            : { defaultValue: heightCm })}
           min="30"
           max="250"
           name="heightCm"
@@ -68,7 +111,12 @@ export default function PatientDetailsFields({
         <span>Weight in kg (optional)</span>
         <input
           className={inputClassName}
-          defaultValue={weightKg}
+          {...(isControlled
+            ? {
+                value: values.weightKg ?? "",
+                onChange: (e) => onChange?.("weightKg", e.target.value),
+              }
+            : { defaultValue: weightKg })}
           min="1"
           max="400"
           name="weightKg"

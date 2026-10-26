@@ -7,6 +7,7 @@ import {
   sendAccountDeletionConfirmation,
   sendEmailChangeConfirmation,
   sendNewEmailVerification,
+  sendPasswordResetEmail,
 } from "./app/actions/sendMail";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -28,8 +29,16 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    sendResetPassword: async ({ user, url }) => {
+      await sendPasswordResetEmail(user.email, url);
+    },
   },
   emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: false,
     sendVerificationEmail: async ({ user, url }) => {
       await sendNewEmailVerification(user.email, url);
     },

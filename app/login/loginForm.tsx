@@ -1,7 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, LoaderCircle, TriangleAlert } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  LoaderCircle,
+  TriangleAlert,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -12,7 +17,11 @@ import Social from "../components/Social";
 import { signIn } from "../actions/auth-actions";
 import { loginSchema } from "../utils/schemas";
 
-export default function LoginForm() {
+export default function LoginForm({
+  emailVerified,
+}: {
+  emailVerified: boolean;
+}) {
   const [serverError, setServerError] = useState("");
   const router = useRouter();
   const {
@@ -46,6 +55,16 @@ export default function LoginForm() {
       title="Sign in to K-Dent"
     >
       <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+        {emailVerified && (
+          <p
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary"
+            role="status"
+          >
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+            Email verified. You can now sign in.
+          </p>
+        )}
         <div>
           <label
             className="mb-2 block text-sm font-medium text-white/85"
@@ -88,6 +107,15 @@ export default function LoginForm() {
               {errors.password.message}
             </p>
           )}
+        </div>
+
+        <div className="-mt-2 text-right">
+          <Link
+            className="text-sm font-medium text-primary transition hover:text-white"
+            href="/forgot-password"
+          >
+            Forgot password?
+          </Link>
         </div>
 
         {serverError && (

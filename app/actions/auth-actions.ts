@@ -3,7 +3,12 @@
 import { auth } from "@/auth";
 import { APIError } from "better-auth";
 import { headers } from "next/headers";
-import { loginSchema, registerSchema } from "../utils/schemas";
+import {
+  loginSchema,
+  registerSchema,
+  emailSchema,
+  resetPasswordSchema,
+} from "../utils/schemas";
 import serverSession from "../utils/serverSession";
 import { redirect } from "next/navigation";
 
@@ -29,7 +34,7 @@ export const signUp = async (email: string, password: string, name: string) => {
         email,
         password,
         name,
-        callbackURL: "/dashboard",
+        callbackURL: "/login?verified=1",
       },
     });
   } catch (error) {
@@ -57,7 +62,10 @@ export const signUp = async (email: string, password: string, name: string) => {
     }
     throw error;
   }
-  return { success: "User created successfully" };
+  return {
+    success:
+      "If this address can be registered, verification instructions have been sent by email. Verify your address before signing in.",
+  };
 };
 
 export const signIn = async (email: string, password: string) => {
@@ -81,7 +89,10 @@ export const signIn = async (email: string, password: string) => {
         case "UNAUTHORIZED":
           return { error: "Invalid email or password." };
         case "FORBIDDEN":
-          return { error: "Please verify your email address first." };
+          return {
+            error:
+              "Your email address is not verified. We sent you a new verification link; check your inbox.",
+          };
         case "TOO_MANY_REQUESTS":
           return { error: "Too many attempts. Try again shortly." };
         default:
@@ -91,6 +102,59 @@ export const signIn = async (email: string, password: string) => {
     throw error;
   }
   return { success: "Signed in successfully." };
+};
+
+export const requestPasswordReset = async (email: string) => {
+  const validation = emailSchema.safeParse({ email });
+  if (!validation.success) {
+    return { error: "Enter a valid email address." };
+  }
+
+  await auth.api.requestPasswordReset({
+    body: {
+      email,
+      redirectTo: "/reset-password",
+    },
+  });
+
+  return {
+    success:
+      "If an account exists for that email, a password reset link has been sent.",
+  };
+};
+
+export const resetPassword = async (
+  token: string,
+  newPassword: string,
+  confirmPassword: string,
+) => {
+  const validation = resetPasswordSchema.safeParse({
+    newPassword,
+    confirmPassword,
+  });
+  if (!validation.success || !token) {
+    return { error: "Enter a valid new password and confirmation." };
+  }
+
+  try {
+    await auth.api.resetPassword({
+      body: {
+        newPassword,
+        token,
+      },
+    });
+    return { success: "Your password has been reset successfully." };
+  } catch (error) {
+    if (error instanceof APIError) {
+      if (error.body?.code === "INVALID_TOKEN") {
+        return {
+          error: "This reset link is invalid or expired. Request a new one.",
+        };
+      }
+      return { error: "Your password could not be reset. Please try again." };
+    }
+    throw error;
+  }
 };
 
 export const signInSocial = async (provider: "google" | "github") => {

@@ -241,7 +241,9 @@ export default function AppointmentManagement({
       const time = String(form.get("time") ?? "");
       const scheduledAt =
         date && time ? new Date(`${date}T${time}:00+06:00`).toISOString() : "";
+      const patientId = form.get("patientId") ? String(form.get("patientId")) : undefined;
       const result = await createOfflineAppointment({
+        patientId,
         firstName: form.get("firstName"),
         lastName: form.get("lastName"),
         phone: form.get("phone"),

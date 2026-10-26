@@ -32,6 +32,10 @@ const bookingSchema = z.object({
   chiefComplaint: z.string().trim().min(1).max(1000),
 });
 
+const offlineBookingSchema = bookingSchema.extend({
+  patientId: z.string().trim().optional(),
+});
+
 async function findScheduleForAppointment(doctorId: string, scheduledAt: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Dhaka",
@@ -193,32 +197,78 @@ export async function submitOnlineAppointment(input: unknown) {
     };
 
   try {
-    const patient = await prisma.patient.upsert({
+    let patient = await prisma.patient.findUnique({
       where: { userId: session.user.id },
-      update: {
-        firstName: data.firstName,
-        lastName: data.lastName || null,
-        phone: data.phone,
-        email: data.email || session.user.email,
-        ...(data.heightCm !== "" && data.heightCm !== undefined
-          ? { heightCm: data.heightCm }
-          : {}),
-        ...(data.weightKg !== "" && data.weightKg !== undefined
-          ? { weightKg: data.weightKg }
-          : {}),
-      },
-      create: {
-        patientNumber: `KD-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
-        firstName: data.firstName,
-        lastName: data.lastName || null,
-        phone: data.phone,
-        email: data.email || session.user.email,
-        heightCm: data.heightCm === "" ? null : data.heightCm,
-        weightKg: data.weightKg === "" ? null : data.weightKg,
-        userId: session.user.id,
-      },
       select: { id: true },
     });
+
+    if (!patient) {
+      const existingUnlinked = await prisma.patient.findFirst({
+        where: {
+          userId: null,
+          OR: [
+            { email: session.user.email },
+            ...(data.email ? [{ email: data.email }] : []),
+            ...(data.phone ? [{ phone: data.phone }] : []),
+          ],
+        },
+        orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+        select: { id: true },
+      });
+
+      if (existingUnlinked) {
+        patient = await prisma.patient.update({
+          where: { id: existingUnlinked.id },
+          data: {
+            userId: session.user.id,
+            firstName: data.firstName,
+            lastName: data.lastName || null,
+            phone: data.phone,
+            email: data.email || session.user.email,
+            ...(data.heightCm !== "" && data.heightCm !== undefined
+              ? { heightCm: data.heightCm }
+              : {}),
+            ...(data.weightKg !== "" && data.weightKg !== undefined
+              ? { weightKg: data.weightKg }
+              : {}),
+          },
+          select: { id: true },
+        });
+      }
+    }
+
+    if (patient) {
+      await prisma.patient.update({
+        where: { id: patient.id },
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName || null,
+          phone: data.phone,
+          email: data.email || session.user.email,
+          ...(data.heightCm !== "" && data.heightCm !== undefined
+            ? { heightCm: data.heightCm }
+            : {}),
+          ...(data.weightKg !== "" && data.weightKg !== undefined
+            ? { weightKg: data.weightKg }
+            : {}),
+        },
+      });
+    } else {
+      patient = await prisma.patient.create({
+        data: {
+          patientNumber: `KD-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
+          firstName: data.firstName,
+          lastName: data.lastName || null,
+          phone: data.phone,
+          email: data.email || session.user.email,
+          heightCm: data.heightCm === "" ? null : data.heightCm,
+          weightKg: data.weightKg === "" ? null : data.weightKg,
+          userId: session.user.id,
+        },
+        select: { id: true },
+      });
+    }
+
     await prisma.appointment.create({
       data: {
         patientId: patient.id,
@@ -248,19 +298,36 @@ export async function loadPatientPortal() {
   if (role !== "USER")
     return { isPatient: false, appointments: [], visits: [] };
   const [firstName, ...lastNameParts] = session.user.name.trim().split(/\s+/);
-  const patient = await prisma.patient.upsert({
+  let patient = await prisma.patient.findUnique({
     where: { userId: session.user.id },
-    update: { isRegistered: true },
-    create: {
-      patientNumber: `KD-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
-      firstName: firstName || session.user.email,
-      lastName: lastNameParts.join(" ") || null,
-      email: session.user.email,
-      userId: session.user.id,
-      isRegistered: true,
-    },
     select: { id: true },
   });
+  if (!patient) {
+    const unlinked = await prisma.patient.findFirst({
+      where: { userId: null, email: session.user.email },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: { id: true },
+    });
+    if (unlinked) {
+      patient = await prisma.patient.update({
+        where: { id: unlinked.id },
+        data: { userId: session.user.id, isRegistered: true },
+        select: { id: true },
+      });
+    } else {
+      patient = await prisma.patient.create({
+        data: {
+          patientNumber: `KD-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
+          firstName: firstName || session.user.email,
+          lastName: lastNameParts.join(" ") || null,
+          email: session.user.email,
+          userId: session.user.id,
+          isRegistered: true,
+        },
+        select: { id: true },
+      });
+    }
+  }
   const [appointments, visits] = await Promise.all([
     prisma.appointment.findMany({
       where: { patientId: patient.id },
@@ -452,6 +519,70 @@ export async function respondToAppointment(
   };
 }
 
+export async function searchPatientsForOfflineBooking(query: string) {
+  await requireStaffAccess();
+  const normalized = typeof query === "string" ? query.trim().slice(0, 100) : "";
+  if (normalized.length < 1) return { patients: [] };
+
+  const terms = normalized.split(/\s+/).filter(Boolean).slice(0, 4);
+
+  try {
+    const patients = await prisma.patient.findMany({
+      where: {
+        AND: terms.map((term) => ({
+          OR: [
+            { firstName: { contains: term, mode: "insensitive" } },
+            { lastName: { contains: term, mode: "insensitive" } },
+            { phone: { contains: term, mode: "insensitive" } },
+            { patientNumber: { contains: term, mode: "insensitive" } },
+          ],
+        })),
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      take: 20,
+      select: {
+        id: true,
+        patientNumber: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        email: true,
+        dateOfBirth: true,
+        sex: true,
+        bloodGroup: true,
+        heightCm: true,
+        weightKg: true,
+        _count: {
+          select: {
+            appointments: true,
+            prescriptions: true,
+          },
+        },
+      },
+    });
+
+    return {
+      patients: patients.map((patient) => ({
+        id: patient.id,
+        patientNumber: patient.patientNumber,
+        firstName: patient.firstName,
+        lastName: patient.lastName ?? "",
+        phone: patient.phone ?? "",
+        email: patient.email ?? "",
+        dateOfBirth: patient.dateOfBirth?.toISOString().slice(0, 10) ?? "",
+        sex: patient.sex,
+        bloodGroup: patient.bloodGroup ?? "",
+        heightCm: patient.heightCm?.toString() ?? "",
+        weightKg: patient.weightKg?.toString() ?? "",
+        visitCount: patient._count.appointments + patient._count.prescriptions,
+      })),
+    };
+  } catch (error) {
+    console.error("Patient search for offline booking failed:", error);
+    return { error: "Patient search failed. Please try again." };
+  }
+}
+
 export async function createOfflineAppointment(input: unknown) {
   const access = await requireStaffAccess();
   if (access.role !== "ADMIN" && access.role !== "ASSISTANT") {
@@ -459,7 +590,7 @@ export async function createOfflineAppointment(input: unknown) {
       error: "Only an assistant or admin can add an offline appointment.",
     };
   }
-  const parsed = bookingSchema.safeParse(input);
+  const parsed = offlineBookingSchema.safeParse(input);
   if (!parsed.success)
     return {
       error:
@@ -483,22 +614,57 @@ export async function createOfflineAppointment(input: unknown) {
     select: { id: true },
   });
   if (conflict) return { error: "Another appointment already uses that time." };
-  const patient = await prisma.patient.create({
-    data: {
-      patientNumber: `KD-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
-      firstName: d.firstName,
-      lastName: d.lastName || null,
-      phone: d.phone,
-      email: d.email || null,
-      heightCm: d.heightCm === "" ? null : d.heightCm,
-      weightKg: d.weightKg === "" ? null : d.weightKg,
-      isRegistered: false,
-    },
-    select: { id: true },
-  });
+
+  let existingPatient = null;
+  if (d.patientId) {
+    existingPatient = await prisma.patient.findUnique({
+      where: { id: d.patientId },
+      select: { id: true },
+    });
+  }
+
+  if (!existingPatient && d.phone) {
+    existingPatient = await prisma.patient.findFirst({
+      where: { phone: d.phone },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: { id: true },
+    });
+  }
+
+  let patientId: string;
+  if (existingPatient) {
+    patientId = existingPatient.id;
+    await prisma.patient.update({
+      where: { id: patientId },
+      data: {
+        firstName: d.firstName,
+        lastName: d.lastName || null,
+        phone: d.phone,
+        email: d.email || null,
+        ...(d.heightCm !== "" && d.heightCm !== undefined ? { heightCm: d.heightCm } : {}),
+        ...(d.weightKg !== "" && d.weightKg !== undefined ? { weightKg: d.weightKg } : {}),
+      },
+    });
+  } else {
+    const patient = await prisma.patient.create({
+      data: {
+        patientNumber: `KD-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
+        firstName: d.firstName,
+        lastName: d.lastName || null,
+        phone: d.phone,
+        email: d.email || null,
+        heightCm: d.heightCm === "" ? null : d.heightCm,
+        weightKg: d.weightKg === "" ? null : d.weightKg,
+        isRegistered: false,
+      },
+      select: { id: true },
+    });
+    patientId = patient.id;
+  }
+
   await prisma.appointment.create({
     data: {
-      patientId: patient.id,
+      patientId,
       doctorId: d.doctorId,
       scheduledAt,
       chiefComplaint: d.chiefComplaint,

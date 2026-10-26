@@ -1,12 +1,19 @@
+import Link from "next/link";
+
 export const AnimatedBorderButton = ({
   children,
+  href,
 }: {
   children?: React.ReactNode;
+  href?: string;
 }) => {
-  return (
-    <button className="border-border text-foreground hover:border-primary/50 focus-visible:ring-primary group animated-border relative overflow-visible rounded-full border bg-transparent px-8 py-3 text-lg font-medium transition-all duration-1000 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-      {/* Animated SVG Border */}
+  const className =
+    "border-border text-foreground hover:border-primary/50 focus-visible:ring-primary group animated-border relative overflow-visible rounded-full border bg-transparent px-8 py-3 text-lg font-medium transition-all duration-1000 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
+  const content = (
+    <>
       <svg
+        aria-hidden="true"
         className="download-cv-border pointer-events-none absolute top-0 left-0 h-full w-full"
         viewBox="0 0 200 60"
         preserveAspectRatio="none"
@@ -27,6 +34,18 @@ export const AnimatedBorderButton = ({
       <span className="relative z-10 flex items-center justify-center gap-2">
         {children}
       </span>
-    </button>
+    </>
+  );
+
+  return (
+    href ? (
+      <Link className={className} href={href}>
+        {content}
+      </Link>
+    ) : (
+      <button className={className} type="button">
+        {content}
+      </button>
+    )
   );
 };

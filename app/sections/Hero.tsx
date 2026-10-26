@@ -2,9 +2,9 @@
 /* eslint-disable @next/next/no-img-element */
 import React from "react";
 import { AnimatedBorderButton } from "../components/AnimatedBorderButton";
-import Button from "../components/Button";
 import { ArrowRight, ChevronDown, Download } from "lucide-react";
 import { FaFacebook, FaLinkedin, FaTwitter } from "react-icons/fa";
+import Link from "next/link";
 
 const skills = [
   "Diagnosis",
@@ -89,9 +89,12 @@ function Hero() {
             </div>
             {/* cta */}
             <div className="animate-fade-in animation-delay-400 flex flex-wrap items-center gap-4">
-              <Button size="default">
+              <Link
+                className="relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-primary px-6 py-3 text-base font-medium text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                href="#contact"
+              >
                 Contact Me <ArrowRight className="h-5 w-5" />
-              </Button>
+              </Link>
               <AnimatedBorderButton>
                 <Download className="h-5 w-5" />
                 Download CV

@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import BookingForm from "./booking-form";
 import type { Metadata } from "next";
 import { getSiteUrl } from "../libs/seo";
+import { prisma } from "../libs/prisma";
 
 const siteUrl = getSiteUrl();
 
@@ -33,6 +34,32 @@ export default async function BookAppointmentPage() {
     getPublicAppointmentOptions(),
   ]);
 
+  let patientProfile = null;
+  if (session?.user) {
+    patientProfile = await prisma.patient.findFirst({
+      where: {
+        OR: [
+          { userId: session.user.id },
+          { email: session.user.email },
+        ],
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        firstName: true,
+        lastName: true,
+        phone: true,
+        heightCm: true,
+        weightKg: true,
+      },
+    });
+  }
+
+  const patientName = patientProfile
+    ? `${patientProfile.firstName} ${patientProfile.lastName ?? ""}`.trim() ||
+      session?.user.name ||
+      ""
+    : session?.user.name || "";
+
   return (
     <main className="bg-background min-h-screen px-4 py-12 text-white sm:px-8 sm:py-16">
       <div className="mx-auto max-w-3xl">
@@ -54,8 +81,11 @@ export default async function BookAppointmentPage() {
         <BookingForm
           doctors={options.doctors}
           email={session?.user.email ?? ""}
+          heightCm={patientProfile?.heightCm?.toString() ?? ""}
           loggedIn={Boolean(session?.user)}
-          name={session?.user.name ?? ""}
+          name={patientName}
+          phone={patientProfile?.phone ?? ""}
+          weightKg={patientProfile?.weightKg?.toString() ?? ""}
         />
       </div>
     </main>
