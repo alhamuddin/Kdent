@@ -12,9 +12,9 @@ import {
 import { AnimatedBorderButton } from "../components/AnimatedBorderButton";
 
 export const metadata: Metadata = {
-  title: "Dental Services",
+  title: "Dental Services in Chittagong",
   description:
-    "Explore dental consultations, preventive care, teeth cleaning, fillings, root canal treatment, extractions, whitening, and restorative care at K-Dent.",
+    "Explore dental consultations, check-ups, teeth cleaning, fillings, root canal treatment, extractions, and teeth whitening at K-Dent in Chowdhury Hat, Chittagong.",
   alternates: {
     canonical: "/services",
   },

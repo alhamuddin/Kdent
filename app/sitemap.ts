@@ -19,5 +19,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
       changeFrequency: "monthly",
     },
+    {
+      url: new URL("/services", siteUrl).toString(),
+      priority: 0.9,
+      changeFrequency: "monthly",
+    },
   ];
 }
